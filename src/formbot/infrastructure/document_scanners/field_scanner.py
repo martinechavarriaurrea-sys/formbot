@@ -182,8 +182,18 @@ def _has_adjacent_empty_excel(sheet: object, row: int, col: int) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Escáner PDF (campos AcroForm)
+# Escáner PDF (campos AcroForm + texto estático)
 # ---------------------------------------------------------------------------
+
+# Patrón: "Etiqueta:" al final de línea, o seguida de espacios/guiones bajos
+_PDF_LABEL_COLON_RE = re.compile(
+    r'^(.{2,100}?)\s*:\s*(?:[_\s]{0,60})?$'
+)
+# Patrón: "Etiqueta: ______..." (guiones bajos explícitos después del colon)
+_PDF_LABEL_UNDERLINE_RE = re.compile(
+    r'^(.{2,100}?)\s*:\s*_{3,}'
+)
+
 
 def _scan_pdf(path: Path) -> list[DetectedField]:
     try:
@@ -214,7 +224,103 @@ def _scan_pdf(path: Path) -> list[DetectedField]:
             sheet=None,
         ))
 
+    # Si el PDF no tiene campos AcroForm, intentar detección por texto
+    if not result:
+        result = _scan_pdf_text(reader)
+
     return result
+
+
+def _scan_pdf_text(reader: object) -> list[DetectedField]:
+    """Detecta campos en PDFs estáticos analizando el texto extraído.
+
+    Busca patrones como:
+    - "Etiqueta:"  (al final de línea o seguido de espacios/guiones)
+    - "Etiqueta: _______"
+    - "Etiqueta1:_____ Etiqueta2:_____"  (múltiples campos por línea)
+    """
+    result: list[DetectedField] = []
+    seen_norm: set[str] = set()
+
+    for page in reader.pages:  # type: ignore[attr-defined]
+        try:
+            text = page.extract_text() or ""
+        except Exception:
+            continue
+
+        lines = text.splitlines()
+        for line in lines:
+            stripped = line.strip()
+            if not stripped:
+                continue
+
+            # Dividir línea en segmentos (maneja múltiples campos por línea)
+            segments = _split_pdf_line_into_segments(stripped)
+            for segment in segments:
+                label = _extract_pdf_label_from_line(segment)
+                if label is None:
+                    continue
+                if len(label) < _MIN_LABEL_LEN or _is_numeric(label):
+                    continue
+                if not _is_likely_form_label(label):
+                    continue
+                norm = normalize_text(label)
+                if not norm or norm in seen_norm:
+                    continue
+                seen_norm.add(norm)
+                result.append(DetectedField(
+                    field_key=label_to_key(label),
+                    label=label,
+                    sheet=None,
+                ))
+
+    return result
+
+
+# Separa segmentos cuando hay 3+ guiones bajos seguidos de espacio y más texto
+_SEGMENT_SPLIT_RE = re.compile(r'_{3,}\s+(?=\S)')
+
+
+def _split_pdf_line_into_segments(line: str) -> list[str]:
+    """Divide una línea en segmentos cuando contiene múltiples campos separados por guiones.
+
+    "NIT:_______ DV:____ Ciudad:__________"  →  ["NIT:", "DV:", "Ciudad:"]
+    """
+    parts = _SEGMENT_SPLIT_RE.split(line)
+    if len(parts) <= 1:
+        return [line]
+    # Cada parte excepto la última puede terminar con texto (label)
+    # La última parte ya tiene la línea completa del último segmento
+    return [p.strip() for p in parts if p.strip()]
+
+
+def _extract_pdf_label_from_line(line: str) -> str | None:
+    """Extrae la etiqueta de una línea de texto con patrón de formulario.
+
+    Ejemplos que coinciden:
+      "Nombre o Razón Social:"         → "Nombre o Razón Social"
+      "NIT/CC/CE: _______________"     → "NIT/CC/CE"
+      "Ciudad:                  "      → "Ciudad"
+    """
+    # Patrón 1: guiones bajos explícitos después del colon
+    m = _PDF_LABEL_UNDERLINE_RE.match(line)
+    if m:
+        label = m.group(1).strip()
+        if label:
+            return label
+
+    # Patrón 2: colon al final o seguido de espacios
+    m = _PDF_LABEL_COLON_RE.match(line)
+    if m:
+        label = m.group(1).strip()
+        # Descartar si la parte después del colon era texto real (no espacios/guiones)
+        after_colon = line[line.index(":") + 1:].strip().replace("_", "").strip()
+        if after_colon:
+            return None
+        if label:
+            return label
+
+    return None
 
 
 # ---------------------------------------------------------------------------
