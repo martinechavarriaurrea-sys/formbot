@@ -1,0 +1,299 @@
+﻿fecha_diligenciamiento:
+  label: "Fecha de diligenciamiento"
+  aliases:
+    - "Fecha de diligenciamiento  (DD/MM/AAA)"
+  sheet: "Formulario contrapartes"
+  required: true
+  type: date
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 2
+
+razon_social:
+  label: "Nombre o Razon social"
+  aliases:
+    - "Nombre o Razón social"
+  sheet: "Formulario contrapartes"
+  required: true
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
+numero_identificacion_nit:
+  label: "C.C. / NIT con DV"
+  sheet: "Formulario contrapartes"
+  required: true
+  type: nit
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
+direccion_principal:
+  label: "Direccion domicilio principal"
+  aliases:
+    - "Dirección domicilio principal:"
+  sheet: "Formulario contrapartes"
+  required: true
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
+telefono_fijo:
+  label: "Telefono"
+  aliases:
+    - "Teléfono"
+  sheet: "Formulario contrapartes"
+  required: true
+  type: phone
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
+pais:
+  label: "Pais"
+  aliases:
+    - "País"
+  sheet: "Formulario contrapartes"
+  required: true
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
+departamento:
+  label: "Departamento"
+  sheet: "Formulario contrapartes"
+  required: true
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
+ciudad_municipio:
+  label: "Ciudad"
+  sheet: "Formulario contrapartes"
+  required: true
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
+pagina_web:
+  label: "Pagina web"
+  aliases:
+    - "Página web:"
+  sheet: "Formulario contrapartes"
+  required: true
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
+celular:
+  label: "Otros telefonos"
+  aliases:
+    - "Otros teléfonos"
+  sheet: "Formulario contrapartes"
+  required: true
+  type: phone
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
+representante_legal_nombre:
+  label: "Datos representante legal"
+  sheet: "Formulario contrapartes"
+  required: true
+  target_strategy: offset
+  offset:
+    row: 1
+    col: 1
+
+representante_legal_documento:
+  label: "Datos representante legal"
+  sheet: "Formulario contrapartes"
+  required: true
+  type: number
+  target_strategy: offset
+  offset:
+    row: 1
+    col: 7
+
+correo_electronico:
+  label: "Datos representante legal"
+  sheet: "Formulario contrapartes"
+  required: true
+  type: email
+  target_strategy: offset
+  offset:
+    row: 2
+    col: 1
+
+firma_representante_nombre:
+  label: "Firma del Representante Legal o Persona Natural"
+  sheet: "Formulario contrapartes"
+  required: true
+  target_strategy: offset
+  offset:
+    row: 1
+    col: 1
+
+firma_representante_documento:
+  label: "Firma del Representante Legal o Persona Natural"
+  sheet: "Formulario contrapartes"
+  required: true
+  type: number
+  target_strategy: offset
+  offset:
+    row: 2
+    col: 1
+
+firma_diligencio_nombre:
+  label: "Firma de quien diligencio el formulario"
+  aliases:
+    - "Firma de quien diligenció el formulario"
+  sheet: "Formulario contrapartes"
+  required: true
+  target_strategy: offset
+  offset:
+    row: 1
+    col: 1
+
+firma_diligencio_documento:
+  label: "Firma de quien diligencio el formulario"
+  aliases:
+    - "Firma de quien diligenció el formulario"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 2
+    col: 1
+
+op_internacionales:
+  label: "Realiza operaciones internacionales"
+  aliases:
+    - "¿Realiza operaciones internacionales?"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset_or_infer
+  write_mode: mark
+  mark_symbol: "X"
+
+cuentas_exterior:
+  label: "Maneja cuentas en el exterior"
+  aliases:
+    - "¿Maneja cuentas en el exterior?"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset_or_infer
+  write_mode: mark
+  mark_symbol: "X"
+
+activos_virtuales:
+  label: "Maneja activos virtuales"
+  aliases:
+    - "¿Maneja activos virtuales?"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset_or_infer
+  write_mode: mark
+  mark_symbol: "X"
+
+intercambio_activos_virtuales:
+  label: "Realizan intercambio entre activos virtuales y monedas"
+  aliases:
+    - "¿Realizan intercambio entre activos virtuales y monedas?"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset_or_infer
+  write_mode: mark
+  mark_symbol: "X"
+
+transferencias_activos_virtuales:
+  label: "Participa intercambia realiza transferencias de activos virtuales"
+  aliases:
+    - "¿Participa, intercambia, realiza transferencias de activos virtuales?"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset_or_infer
+  write_mode: mark
+  mark_symbol: "X"
+
+controles_laft:
+  label: "Tiene controles para la prevencion del riesgo de lavado de activos"
+  aliases:
+    - "¿Tiene controles para la prevención del riesgo de lavado de activos, la financiación del terrorismo o el financiamiento de armas de destrucción masiva?"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset_or_infer
+  write_mode: mark
+  mark_symbol: "X"
+
+referencia_1_empresa:
+  label: "4. REFERENCIAS COMERCIALES"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 2
+    col: 0
+
+referencia_2_empresa:
+  label: "4. REFERENCIAS COMERCIALES"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 3
+    col: 0
+
+beneficiario_1_nombre:
+  label: "6. INFORMACION DE BENEFICIARIOS FINALES"
+  aliases:
+    - "6. INFORMACIÓN DE BENEFICIARIOS FINALES"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 2
+    col: 0
+
+beneficiario_2_nombre:
+  label: "6. INFORMACION DE BENEFICIARIOS FINALES"
+  aliases:
+    - "6. INFORMACIÓN DE BENEFICIARIOS FINALES"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 3
+    col: 0
+
+banco_nombre:
+  label: "7. INFORMACION FINANCIERA DE LA ORGANIZACION"
+  aliases:
+    - "7. INFORMACIÓN FINANCIERA DE LA ORGANIZACIÓN"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 2
+    col: 1
+
+numero_cuenta:
+  label: "7. INFORMACION FINANCIERA DE LA ORGANIZACION"
+  aliases:
+    - "7. INFORMACIÓN FINANCIERA DE LA ORGANIZACIÓN"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 2
+    col: 6

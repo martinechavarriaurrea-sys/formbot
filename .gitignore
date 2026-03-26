@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.whl
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.coverage
+
+# Outputs generados
+outputs/
+!outputs/.gitkeep
+
+# Tools embebidos (Python portable)
+.tools/
+
+# Logs y trazabilidad generada en ejecución
+docs/runs/
+docs/changes/
+docs/decisions/
+!docs/runs/.gitkeep
+!docs/changes/.gitkeep
+!docs/decisions/.gitkeep
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporales
+*.tmp
+*.bak
+*.swp
+*~
+
+# Local-only project data (no publicar)
+.claude/
+tmp_asteco/
+.vercel/
+
+# Hash state interno
+docs/changes/.script_hash_state.json

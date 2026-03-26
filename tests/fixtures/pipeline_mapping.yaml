@@ -1,0 +1,21 @@
+nombre_representante:
+  label: Nombre del representante legal
+  offset:
+    row: 0
+    col: 3
+  required: true
+  sheet: Formulario
+fecha_firma:
+  label: Fecha de firma
+  offset:
+    row: 0
+    col: 3
+  required: false
+  sheet: Formulario
+tipo_persona:
+  label: Tipo de persona
+  offset:
+    row: 0
+    col: 3
+  required: true
+  sheet: Formulario

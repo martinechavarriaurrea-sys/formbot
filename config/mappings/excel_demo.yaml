@@ -1,0 +1,40 @@
+nombre_representante:
+  label: "Nombre del representante legal"
+  offset:
+    row: 0
+    col: 3
+  sheet: "Formulario"
+  required: true
+
+nit:
+  label: "NIT"
+  offset:
+    row: 0
+    col: 3
+  sheet: "Formulario"
+  required: true
+
+razon_social:
+  label: "Razon social"
+  offset:
+    row: 0
+    col: 3
+  sheet: "Formulario"
+  required: false
+
+correo:
+  label: "Correo electronico"
+  offset:
+    row: 0
+    col: 3
+  sheet: "Formulario"
+  required: false
+
+observaciones:
+  label: "Bloque de observaciones"
+  offset:
+    row: 0
+    col: 3
+  sheet: "Formulario"
+  required: false
+
