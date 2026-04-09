@@ -115,3 +115,39 @@ class ExcelStructureReader:
                             text=cell_text,
                         )
                     )
+
+    def find_adjacent_empty(
+        self, workbook: Workbook, position: CellPosition
+    ) -> CellPosition | None:
+        """Primera celda vacía adyacente a *position* (derecha hasta 8, luego abajo hasta 3)."""
+        try:
+            from openpyxl.cell.cell import MergedCell
+            sheet = workbook[position.sheet_name]
+        except (KeyError, ImportError):
+            return None
+
+        # Escanear hacia la derecha
+        for dc in range(1, 9):
+            try:
+                cell = sheet.cell(row=position.row, column=position.column + dc)
+            except Exception:
+                break
+            if isinstance(cell, MergedCell):
+                continue
+            if cell.value is None or str(cell.value).strip() == "":
+                return CellPosition(position.sheet_name, position.row, position.column + dc)
+            break  # Celda ocupada: dejar de buscar a la derecha
+
+        # Escanear hacia abajo
+        for dr in range(1, 4):
+            try:
+                cell = sheet.cell(row=position.row + dr, column=position.column)
+            except Exception:
+                break
+            if isinstance(cell, MergedCell):
+                continue
+            if cell.value is None or str(cell.value).strip() == "":
+                return CellPosition(position.sheet_name, position.row + dr, position.column)
+            break
+
+        return None

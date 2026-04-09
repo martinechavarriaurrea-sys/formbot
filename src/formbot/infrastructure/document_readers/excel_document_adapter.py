@@ -38,6 +38,9 @@ class ExcelDocumentAdapter(DocumentAdapter):
     def close(self) -> None:
         self._workbook.close()
 
+    def find_adjacent_empty(self, position: CellPosition) -> CellPosition | None:
+        return self._structure_reader.find_adjacent_empty(self._workbook, position)
+
     @staticmethod
     def _load_template(template_path: Path) -> Workbook:
         if not template_path.exists():

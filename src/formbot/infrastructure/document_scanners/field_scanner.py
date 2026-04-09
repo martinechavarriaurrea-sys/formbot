@@ -30,6 +30,9 @@ _KNOWN_LABEL_TOKENS = {
     "tipo", "numero", "cuenta", "rut", "contacto", "codigo",
     "actividad", "digito", "cupo", "departamento", "dv",
     "plazo", "representante", "identificacion", "direccion",
+    "patrimonio", "activos", "pasivos", "ingresos", "egresos",
+    "banco", "entidad", "titular", "sucursal", "barrio",
+    "sector", "ciiu", "matricula", "sigla", "objeto",
 }
 
 

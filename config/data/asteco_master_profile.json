@@ -6,6 +6,7 @@
   "digito_verificacion": "2",
   "nit_completo": "890900240-2",
   "tipo_persona": "Juridica",
+  "tipo_identificacion": "NIT",
   "tipo_empresa": "Privada",
   "matricula_mercantil": "21-004049-12",
   "fecha_constitucion": "07/12/1944",
@@ -45,6 +46,8 @@
   "contador_tipo_doc": "CC",
   "contador_documento": "1017133375",
   "contador_tarjeta_profesional": "211255-T",
+  "contador_correo": null,
+  "contador_telefono": null,
   "contador_empresa": "ZONA CONTABLE C&G S.A.S",
   "contador_empresa_nit": "900995545-6",
   "contador_suplente_nombre": "Sebastian Robledo Valencia",
@@ -52,8 +55,11 @@
   "contador_suplente_tarjeta": "237807-T",
 
   "contacto_nombre": "Olga Vallejo",
+  "contacto_cargo": null,
+  "contacto_documento": null,
   "contacto_celular": "3156588343",
   "contacto_correo": "Contactenos@asteco.com.co",
+  "contacto_correo_personal": null,
 
   "pep_maneja_recursos_publicos": false,
   "pep_ejerce_poder_publico": false,
@@ -96,8 +102,14 @@
   "beneficiario_2_nombre": "Ana Beatriz Molina de Mesa",
   "beneficiario_2_tipo_doc": "CC",
   "beneficiario_2_documento": "21359316",
+  "beneficiario_2_fecha_expedicion": null,
   "beneficiario_2_participacion": "11.159%",
   "beneficiario_2_pep": false,
+
+  "firma_representante_nombre": "Marcos Rodrigo Echavarria Soto",
+  "firma_representante_documento": "15347129",
+  "firma_diligencio_nombre": "Olga Vallejo",
+  "firma_diligencio_documento": null,
 
   "banco_nombre": "Bancolombia",
   "tipo_cuenta": "Corriente",
@@ -120,5 +132,10 @@
   "fin_patrimonio_2022": 9534181888,
   "fin_ingresos_2022": 22409410341,
 
-  "ingresos_ordinarios_reportados_dian": "$20.824.688.746"
+  "ingresos_ordinarios_reportados_dian": "$20.824.688.746",
+
+  "tipo_contraparte_defecto": "Proveedor",
+  "reporta_entidad_control": null,
+  "certificacion_basc_oea": null,
+  "certificaciones_calidad": null
 }

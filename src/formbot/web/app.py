@@ -33,44 +33,317 @@ SUPPORTED_EXTENSIONS: dict[str, str] = {
 # ---------------------------------------------------------------------------
 # Hints de perfil: fragmento de etiqueta → clave en el perfil maestro
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Hints: fragmento de etiqueta (normalizado) → clave en el perfil maestro.
+# Orden importa: los más específicos primero para evitar solapamientos.
+# ---------------------------------------------------------------------------
 _PROFILE_HINTS: dict[str, str] = {
+
+    # ── Identidad principal ──────────────────────────────────────────────────
     "razon social": "razon_social",
+    "nombre o razon": "razon_social",
+    "nombre social": "razon_social",
+    "denominacion social": "razon_social",
+    "nombre empresa": "razon_social",
+    "nombre o denominacion": "razon_social",
+    "nombre completo empresa": "razon_social",
     "nombre comercial": "nombre_comercial",
+    "nombre o sigla": "nombre_comercial",
+    "sigla": "sigla",
+
+    # ── NIT / Identificación tributaria ─────────────────────────────────────
+    "nit con dv": "nit_completo",
+    "nit con digito": "nit_completo",
+    "nit / cc": "nit_completo",
+    "cc / nit": "nit_completo",
+    "identificacion fiscal": "nit_completo",
+    "numero de nit": "nit_completo",
+    "numero tributario": "nit_completo",
+    "numero de rut": "nit_completo",
+    "rut": "nit_completo",
+    "nif": "nit_completo",
+    "numero de identificacion tributaria": "nit_completo",
+    "numero de identificacion fiscal": "nit_completo",
     "numero de identificacion": "numero_identificacion_nit",
     "numero identificacion": "numero_identificacion_nit",
     "identificacion tributaria": "numero_identificacion_nit",
+    "numero de documento": "numero_identificacion_nit",
     "nit": "numero_identificacion_nit",
     "digito de verificacion": "digito_verificacion",
     "digito verificacion": "digito_verificacion",
+    "d.v": "digito_verificacion",
+    "d v": "digito_verificacion",
+    "dv": "digito_verificacion",
     "verificacion": "digito_verificacion",
-    "representante legal": "representante_legal_nombre",
-    "nombre representante": "representante_legal_nombre",
-    "nombres y apellidos": "representante_legal_nombre",
-    "documento representante": "representante_legal_documento",
-    "identificacion representante": "representante_legal_documento",
+
+    # ── Tipo de persona / empresa / identificación ──────────────────────────
+    "tipo de identificacion": "tipo_identificacion",
+    "tipo identificacion": "tipo_identificacion",
+    # "tipo de documento" y "tipo documento" van DESPUÉS de los hints del representante
+    # para no interceptar "tipo de documento representante".
+    "clase de identificacion": "tipo_identificacion",
+    "tipo de persona": "tipo_persona",
+    "tipo persona": "tipo_persona",
+    "clase de persona": "tipo_persona",
+    "persona natural o juridica": "tipo_persona",
+    "tipo de empresa": "tipo_empresa",
+    "tipo empresa": "tipo_empresa",
+    "naturaleza juridica": "tipo_empresa",
+    "tipo de sociedad": "tipo_empresa",
+
+    # ── Matricula / constitución ─────────────────────────────────────────────
+    "matricula mercantil": "matricula_mercantil",
+    "numero de matricula": "matricula_mercantil",
+    "camara de comercio": "matricula_mercantil",
+    "fecha de constitucion": "fecha_constitucion",
+    "fecha constitucion": "fecha_constitucion",
+    "fecha de creacion": "fecha_constitucion",
+    "fecha de fundacion": "fecha_constitucion",
+    "fecha matricula": "fecha_matricula",
+
+    # ── Dirección / ubicación ────────────────────────────────────────────────
+    "direccion domicilio": "direccion_principal",
+    "domicilio principal": "direccion_principal",
+    "direccion principal": "direccion_principal",
+    "direccion comercial": "direccion_principal",
+    "direccion fiscal": "direccion_principal",
+    "direccion de la empresa": "direccion_principal",
+    "domicilio": "direccion_principal",
     "direccion": "direccion_principal",
-    "ciudad": "ciudad_municipio",
+    "barrio": "barrio",
+    "localidad": "barrio",
+    "ciudad / municipio": "ciudad_municipio",
+    "ciudad o municipio": "ciudad_municipio",
+    "ciudad municipio": "ciudad_municipio",
     "municipio": "ciudad_municipio",
+    "ciudad": "ciudad_municipio",
     "departamento": "departamento",
+    "estado / provincia": "departamento",
     "pais": "pais",
-    "telefono fijo": "telefono_fijo",
-    "telefono": "telefono_fijo",
-    "telefax": "telefono_fijo",
+    "country": "pais",
+
+    # ── Contacto / teléfonos ─────────────────────────────────────────────────
+    "otros telefonos": "celular",
+    "otros telefono": "celular",
+    "telefono movil": "celular",
+    "telefono celular": "celular",
+    "numero celular": "celular",
     "celular": "celular",
-    "movil": "celular",
+    "movil": "contacto_celular",   # "Móvil:" aparece en la sección de contacto comercial
+    "whatsapp": "celular",
+    "telefono fijo": "telefono_fijo",
+    "telefono principal": "telefono_fijo",
+    "telefono de contacto": "telefono_fijo",
+    "numero de telefono": "telefono_fijo",
+    "telefax": "telefono_fijo",
+    "fax": "telefono_fijo",
+    "telefono": "telefono_fijo",
+    "telefono alternativo": "telefono_alternativo",
+    "segundo telefono": "telefono_alternativo",
+
+    # ── Correo electrónico ───────────────────────────────────────────────────
     "correo electronico": "correo_electronico",
+    "correo electronico empresa": "correo_electronico",
+    "email empresa": "correo_electronico",
+    "email corporativo": "correo_electronico",
+    "e-mail": "correo_electronico",
+    "e mail": "correo_electronico",
     "correo": "correo_electronico",
     "email": "correo_electronico",
-    "contacto": "contacto_nombre",
+    "pagina web": "pagina_web",
+    "sitio web": "pagina_web",
+    "website": "pagina_web",
+    "url": "pagina_web",
+
+    # ── Actividad económica / CIIU ───────────────────────────────────────────
+    "actividad economica": "actividad_economica",
+    "actividad principal": "actividad_economica",
+    "objeto social": "actividad_economica",
+    "descripcion de la actividad": "descripcion_actividad",
+    "descripcion actividad": "descripcion_actividad",
+    "actividad o negocio": "descripcion_actividad",
+    "giro del negocio": "descripcion_actividad",
+    "bien o servicio": "bien_servicio",
+    "producto o servicio": "bien_servicio",
+    "servicio prestado": "bien_servicio",
+    "codigo ciiu": "codigo_ciiu",
+    "ciiu": "codigo_ciiu",
+    "sector economico": "sector",
+    "sector": "sector",
+
+    # ── Representante legal ──────────────────────────────────────────────────
+    "nombre representante legal": "representante_legal_nombre",
+    "nombre del representante": "representante_legal_nombre",
+    "representante legal": "representante_legal_nombre",
+    "nombre representante": "representante_legal_nombre",
+    "nombres y apellidos del representante": "representante_legal_nombre",
+    "datos representante": "representante_legal_nombre",
+    "apoderado": "representante_legal_nombre",
+    "gerente": "representante_legal_nombre",
+    # NOTA: "nombres y apellidos" (sin "representante") se omite intencionalmente:
+    # aparece también en secciones de contacto y PEP → demasiado genérico.
+    "tipo de documento representante": "representante_legal_tipo_doc",
+    "tipo doc representante": "representante_legal_tipo_doc",
+    "tipo identificacion representante": "representante_legal_tipo_doc",
+    # Hints genéricos de tipo de documento DESPUÉS de los específicos del representante
+    "tipo de documento": "tipo_identificacion",
+    "tipo documento": "tipo_identificacion",
+    "cc representante": "representante_legal_documento",
+    "cedula representante": "representante_legal_documento",
+    "documento representante": "representante_legal_documento",
+    "identificacion representante": "representante_legal_documento",
+    "numero documento representante": "representante_legal_documento",
+    "celular representante": "representante_legal_celular",
+    "telefono representante": "representante_legal_celular",
+    "correo representante": "representante_legal_correo",
+    "email representante": "representante_legal_correo",
+    "direccion representante": "representante_legal_direccion",
+    "fecha expedicion representante": "representante_legal_fecha_expedicion_doc",
+    "fecha de expedicion representante": "representante_legal_fecha_expedicion_doc",
+    "lugar expedicion representante": "representante_legal_lugar_expedicion_doc",
+    "lugar de expedicion": "representante_legal_lugar_expedicion_doc",
+    "nombres y apellidos": "representante_legal_nombre",
+
+    # ── Contador ─────────────────────────────────────────────────────────────
+    "firma contadora": "contador_empresa",
+    "empresa contadora": "contador_empresa",
+    "nit empresa contadora": "contador_empresa_nit",
+    "tarjeta profesional contador": "contador_tarjeta_profesional",
+    "tp contador": "contador_tarjeta_profesional",
+    "tarjeta profesional": "contador_tarjeta_profesional",
+    "nombre contador": "contador_nombre",
+    "revisor fiscal": "contador_nombre",
+    "tipo doc contador": "contador_tipo_doc",
+    "cc contador": "contador_documento",
+    "cedula contador": "contador_documento",
+    "documento contador": "contador_documento",
+    "nombre del contador": "contador_nombre",
+    "contador": "contador_nombre",
+
+    # ── Contacto administrativo ──────────────────────────────────────────────
+    "persona de contacto": "contacto_nombre",
+    "nombre de contacto": "contacto_nombre",
     "nombre del contacto": "contacto_nombre",
-    "banco": "banco_nombre",
+    "contacto administrativo": "contacto_nombre",
+    "contacto comercial": "contacto_nombre",
+    "responsable": "contacto_nombre",
+    "contacto": "contacto_nombre",
+    "cargo contacto": "contacto_cargo",
+    "cargo del contacto": "contacto_cargo",
+    "celular contacto": "contacto_celular",
+    "correo contacto": "contacto_correo",
+
+    # ── PEP ──────────────────────────────────────────────────────────────────
+    "maneja recursos publicos": "pep_maneja_recursos_publicos",
+    "ejerce poder publico": "pep_ejerce_poder_publico",
+    "reconocimiento publico": "pep_reconocimiento_publico",
+    "vinculo con pep": "pep_vinculo_pep",
+    "persona expuesta politicamente": "pep_maneja_recursos_publicos",
+    "pep": "pep_maneja_recursos_publicos",
+
+    # ── Operaciones internacionales / cumplimiento ───────────────────────────
+    "operaciones internacionales": "op_internacionales",
+    "realiza operaciones internacionales": "op_internacionales",
+    "tipo de operacion internacional": "tipo_operacion_internacional",
+    "importacion exportacion": "tipo_operacion_internacional",
+    "cuentas en el exterior": "cuentas_exterior",
+    "cuentas exterior": "cuentas_exterior",
+    "activos virtuales": "activos_virtuales",
+    "criptomonedas": "activos_virtuales",
+    "intercambio activos virtuales": "intercambio_activos_virtuales",
+    "transferencias activos virtuales": "transferencias_activos_virtuales",
+    "controles laft": "controles_laft",
+    "sistema de prevencion": "controles_laft",
+    "siplaft": "controles_laft",
+    "sagrilaft": "controles_laft",
+    "prevencion lavado": "controles_laft",
+    "lavado de activos": "controles_laft",
+
+    # ── Referencias comerciales ──────────────────────────────────────────────
+    "referencia 1 empresa": "referencia_1_empresa",
+    "referencia comercial 1": "referencia_1_empresa",
+    "empresa referencia 1": "referencia_1_empresa",
+    "referencia 2 empresa": "referencia_2_empresa",
+    "referencia comercial 2": "referencia_2_empresa",
+    "empresa referencia 2": "referencia_2_empresa",
+    "nit referencia 1": "referencia_1_nit",
+    "nit referencia 2": "referencia_2_nit",
+    "telefono referencia 1": "referencia_1_telefono",
+    "telefono referencia 2": "referencia_2_telefono",
+    "ciudad referencia 1": "referencia_1_ciudad",
+    "ciudad referencia 2": "referencia_2_ciudad",
+    "contacto referencia 1": "referencia_1_contacto",
+    "contacto referencia 2": "referencia_2_contacto",
+    "cupo de credito 1": "referencia_1_cupo",
+    "cupo de credito 2": "referencia_2_cupo",
+
+    # ── Beneficiarios finales ────────────────────────────────────────────────
+    "beneficiario 1": "beneficiario_1_nombre",
+    "beneficiario final 1": "beneficiario_1_nombre",
+    "nombre beneficiario 1": "beneficiario_1_nombre",
+    "beneficiario 2": "beneficiario_2_nombre",
+    "beneficiario final 2": "beneficiario_2_nombre",
+    "nombre beneficiario 2": "beneficiario_2_nombre",
+    "porcentaje participacion": "beneficiario_1_participacion",
+    "participacion accionaria": "beneficiario_1_participacion",
+
+    # ── Información bancaria ─────────────────────────────────────────────────
     "entidad bancaria": "banco_nombre",
+    "nombre del banco": "banco_nombre",
+    "banco": "banco_nombre",
     "tipo de cuenta": "tipo_cuenta",
     "tipo cuenta": "tipo_cuenta",
+    "clase de cuenta": "tipo_cuenta",
+    "producto bancario": "tipo_cuenta",
+    "numero de cuenta bancaria": "numero_cuenta",
     "numero de cuenta": "numero_cuenta",
     "numero cuenta": "numero_cuenta",
-    "titular": "titular_cuenta",
+    "no cuenta": "numero_cuenta",           # "No. Cuenta:" → normaliza a "no cuenta"
+    "cuenta bancaria": "numero_cuenta",
+    "titular de la cuenta": "titular_cuenta",
     "titular cuenta": "titular_cuenta",
+    "titular": "titular_cuenta",
+    "sucursal": "banco_sucursal",
+    "fecha apertura cuenta": "fecha_apertura_cuenta",
+
+    # ── Estados financieros ──────────────────────────────────────────────────
+    "ingresos reportados dian": "ingresos_ordinarios_reportados_dian",
+    "ingresos dian": "ingresos_ordinarios_reportados_dian",
+    "ingresos ordinarios reportados": "ingresos_ordinarios_reportados_dian",
+    "total activos": "fin_activos",
+    "activos totales": "fin_activos",
+    "activos": "fin_activos",
+    "total pasivos": "fin_pasivos",
+    "pasivos totales": "fin_pasivos",
+    "pasivos": "fin_pasivos",
+    "patrimonio neto": "fin_patrimonio",
+    "total patrimonio": "fin_patrimonio",
+    "patrimonio": "fin_patrimonio",
+    "ingresos no operacionales": "fin_otros_ingresos",
+    "otros ingresos": "fin_otros_ingresos",
+    "ingresos operacionales": "fin_ingresos",
+    "ingresos": "fin_ingresos",
+    "ventas": "fin_ingresos",
+    "costos y gastos": "fin_egresos",
+    "egresos": "fin_egresos",
+    "gastos": "fin_egresos",
+    "periodo financiero": "fin_ano",
+    "ano fiscal": "fin_ano",
+
+    # ── Firma / diligenciamiento ─────────────────────────────────────────────
+    "firma representante": "firma_representante_nombre",
+    "firma del representante": "firma_representante_nombre",
+    "nombre para firma": "firma_representante_nombre",
+    "firma de quien diligencio": "firma_diligencio_nombre",
+    "firma diligenciador": "firma_diligencio_nombre",
+    "quien diligencio": "firma_diligencio_nombre",
+    "elaborado por": "firma_diligencio_nombre",
+    "diligenciado por": "firma_diligencio_nombre",
+    "fecha de diligenciamiento": "fecha_diligenciamiento_hoy",
+    "fecha diligenciamiento": "fecha_diligenciamiento_hoy",
+    "fecha de elaboracion": "fecha_diligenciamiento_hoy",
+    "fecha de inscripcion": "fecha_diligenciamiento_hoy",
+    "fecha": "fecha_diligenciamiento_hoy",
 }
 
 
@@ -88,6 +361,12 @@ def _load_master_profile() -> dict[str, Any]:
         return {}
 
 
+def _today_str() -> str:
+    """Retorna la fecha actual en formato DD/MM/YYYY."""
+    from datetime import date
+    return date.today().strftime("%d/%m/%Y")
+
+
 def _suggest_from_profile(label: str, profile: dict[str, Any]) -> str | None:
     """Intenta encontrar un valor sugerido en el perfil para la etiqueta dada."""
     if not profile:
@@ -98,18 +377,35 @@ def _suggest_from_profile(label: str, profile: dict[str, Any]) -> str | None:
 
     # 1. Match directo: slug de la etiqueta coincide con una clave del perfil
     slug = "_".join(normalized.split())
-    if slug in profile:
+    if slug in profile and profile[slug] is not None and not isinstance(profile[slug], bool):
         return str(profile[slug])
 
     # 2. Hints manuales: fragmento conocido dentro de la etiqueta normalizada
     for hint, key in _PROFILE_HINTS.items():
-        if hint in normalized and key in profile:
+        if hint not in normalized:
+            continue
+        # "rut" solo aplica cuando la etiqueta no es sobre una fecha del RUT
+        if hint == "rut" and "fecha" in normalized:
+            continue
+        # Clave especial: fecha actual — solo si la etiqueta no pide una fecha historica
+        if key == "fecha_diligenciamiento_hoy":
+            _fecha_historica = {"vencimiento", "expedicion", "constitucion",
+                                "apertura", "nacimiento", "emision", "fundacion",
+                                "matricula", "creacion", "vigencia"}
+            if any(tok in normalized for tok in _fecha_historica):
+                continue
+            return _today_str()
+        if key in profile and profile[key] is not None and not isinstance(profile[key], bool):
             return str(profile[key])
 
-    # 3. Substring inverso: clave normalizada del perfil contenida en la etiqueta
+    # 3. Clave del perfil contenida en la etiqueta (dirección única, no inversa)
+    # Solo "key_norm in normalized" — evita que etiquetas cortas ("nombre", "cargo")
+    # coincidan con cualquier clave que las contenga ("nombre_comercial", "referencia_1_cargo_contacto").
     for key, value in profile.items():
+        if value is None or isinstance(value, bool):
+            continue
         key_norm = normalize_text(key.replace("_", " "))
-        if key_norm and (key_norm in normalized or normalized in key_norm):
+        if key_norm and key_norm in normalized:
             return str(value)
 
     return None

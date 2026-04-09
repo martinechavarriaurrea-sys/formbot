@@ -3,7 +3,7 @@
   aliases:
     - "Fecha de diligenciamiento  (DD/MM/AAA)"
   sheet: "Formulario contrapartes"
-  required: true
+  required: false
   type: date
   target_strategy: offset
   offset:
@@ -21,7 +21,7 @@ razon_social:
     row: 0
     col: 1
 
-numero_identificacion_nit:
+nit_completo:
   label: "C.C. / NIT con DV"
   sheet: "Formulario contrapartes"
   required: true

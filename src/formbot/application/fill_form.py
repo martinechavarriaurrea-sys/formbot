@@ -86,9 +86,44 @@ class FillFormUseCase:
                 continue
 
             target_position = self._field_mapper.resolve_target(rule, label_position)
-            value_to_write = (
-                rule.mark_symbol if rule.write_mode == "mark" else data[rule.field_name]
-            )
+            # Si la estrategia incluye inferencia y el offset es cero (target == label),
+            # buscar la primera celda adyacente vacía para no sobrescribir el label.
+            if (
+                rule.target_strategy in {"infer", "offset_or_infer"}
+                and target_position == label_position
+            ):
+                inferred = self._document_adapter.find_adjacent_empty(label_position)
+                if inferred is not None:
+                    target_position = inferred
+                elif rule.write_mode == "mark":
+                    # Sin celda adyacente libre: omitir antes de corromper la etiqueta
+                    LOGGER.warning(
+                        "No se encontró celda vacía adyacente para campo mark '%s'. Se omite.",
+                        rule.field_name,
+                    )
+                    write_results.append(
+                        FieldWriteResult(
+                            field_name=rule.field_name,
+                            status="skipped",
+                            detail="No hay celda adyacente libre para marcar",
+                        )
+                    )
+                    continue
+            raw_value = data[rule.field_name]
+            if rule.write_mode == "mark":
+                # Solo marcar si el valor es verdadero; si es False/falsy, omitir campo
+                if not raw_value:
+                    write_results.append(
+                        FieldWriteResult(
+                            field_name=rule.field_name,
+                            status="skipped",
+                            detail="Valor falso: no se marca",
+                        )
+                    )
+                    continue
+                value_to_write = rule.mark_symbol
+            else:
+                value_to_write = raw_value
             try:
                 self._document_adapter.write_value(target_position, value_to_write)
             except ValidationException as exc:

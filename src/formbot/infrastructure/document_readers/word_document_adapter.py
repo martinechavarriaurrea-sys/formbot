@@ -192,6 +192,40 @@ class WordDocumentAdapter(DocumentAdapter):
         # python-docx no requiere cierre explícito
         return None
 
+    def find_adjacent_empty(self, position: CellPosition) -> CellPosition | None:
+        """Primera celda vacía a la derecha en la misma fila de tabla.
+
+        Solo aplica a celdas de tabla (word_table_N). Para párrafos devuelve None
+        porque el concepto de "columna adyacente" no existe en ese contexto.
+        """
+        if not position.sheet_name.startswith(_WORD_TABLE_PREFIX):
+            return None
+
+        try:
+            t_idx = int(position.sheet_name[len(_WORD_TABLE_PREFIX):])
+        except ValueError:
+            return None
+
+        if t_idx >= len(self._document.tables):
+            return None
+
+        table = self._document.tables[t_idx]
+        row_idx = position.row - 1  # de 1-indexado a 0-indexado
+
+        if row_idx < 0 or row_idx >= len(table.rows):
+            return None
+
+        row = table.rows[row_idx]
+        # position.column es 1-indexado → la siguiente columna (0-indexado) es position.column
+        for c_idx in range(position.column, len(row.cells)):
+            if not row.cells[c_idx].text.strip():
+                return CellPosition(
+                    sheet_name=position.sheet_name,
+                    row=position.row,
+                    column=c_idx + 1,  # volver a 1-indexado
+                )
+        return None
+
     # ------------------------------------------------------------------
     # Búsqueda de candidatos
     # ------------------------------------------------------------------

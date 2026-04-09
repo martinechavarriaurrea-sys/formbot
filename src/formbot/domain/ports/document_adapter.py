@@ -24,3 +24,7 @@ class DocumentAdapter(ABC):
     def close(self) -> None:
         raise NotImplementedError
 
+    def find_adjacent_empty(self, position: CellPosition) -> CellPosition | None:
+        """Primera celda vacía adyacente (derecha o abajo). None si no aplica."""
+        return None
+
