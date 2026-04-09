@@ -1,4 +1,4 @@
-﻿fecha_diligenciamiento:
+fecha_diligenciamiento:
   label: "Fecha de diligenciamiento"
   aliases:
     - "Fecha de diligenciamiento  (DD/MM/AAA)"
@@ -54,6 +54,19 @@ telefono_fijo:
     row: 0
     col: 1
 
+# "Otros teléfonos" recibe el número alternativo, no el celular principal del RL
+telefono_alternativo:
+  label: "Otros telefonos"
+  aliases:
+    - "Otros teléfonos"
+  sheet: "Formulario contrapartes"
+  required: false
+  type: phone
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
 pais:
   label: "Pais"
   aliases:
@@ -88,19 +101,7 @@ pagina_web:
   aliases:
     - "Página web:"
   sheet: "Formulario contrapartes"
-  required: true
-  target_strategy: offset
-  offset:
-    row: 0
-    col: 1
-
-celular:
-  label: "Otros telefonos"
-  aliases:
-    - "Otros teléfonos"
-  sheet: "Formulario contrapartes"
-  required: true
-  type: phone
+  required: false                # false: no todos los forms tienen campo web
   target_strategy: offset
   offset:
     row: 0
@@ -123,12 +124,13 @@ representante_legal_documento:
   target_strategy: offset
   offset:
     row: 1
-    col: 7
+    col: 7                       # VERIFICAR: depende de la estructura de columnas del form
 
-correo_electronico:
+# Correo del representante legal (row 2 de la sección RL), no el email general de la empresa
+representante_legal_correo:
   label: "Datos representante legal"
   sheet: "Formulario contrapartes"
-  required: true
+  required: false
   type: email
   target_strategy: offset
   offset:
@@ -138,7 +140,7 @@ correo_electronico:
 firma_representante_nombre:
   label: "Firma del Representante Legal o Persona Natural"
   sheet: "Formulario contrapartes"
-  required: true
+  required: false                # false: bloquea fill si el label de firma no existe
   target_strategy: offset
   offset:
     row: 1
@@ -147,7 +149,7 @@ firma_representante_nombre:
 firma_representante_documento:
   label: "Firma del Representante Legal o Persona Natural"
   sheet: "Formulario contrapartes"
-  required: true
+  required: false
   type: number
   target_strategy: offset
   offset:
@@ -159,7 +161,7 @@ firma_diligencio_nombre:
   aliases:
     - "Firma de quien diligenció el formulario"
   sheet: "Formulario contrapartes"
-  required: true
+  required: false
   target_strategy: offset
   offset:
     row: 1
@@ -243,7 +245,7 @@ referencia_1_empresa:
   target_strategy: offset
   offset:
     row: 2
-    col: 0
+    col: 1                       # col:1 → columna del valor, no la del header (col:0 era incorrecto)
 
 referencia_2_empresa:
   label: "4. REFERENCIAS COMERCIALES"
@@ -252,7 +254,7 @@ referencia_2_empresa:
   target_strategy: offset
   offset:
     row: 3
-    col: 0
+    col: 1
 
 beneficiario_1_nombre:
   label: "6. INFORMACION DE BENEFICIARIOS FINALES"
@@ -263,7 +265,7 @@ beneficiario_1_nombre:
   target_strategy: offset
   offset:
     row: 2
-    col: 0
+    col: 1                       # col:1 → columna del valor nombre, no la del header
 
 beneficiario_2_nombre:
   label: "6. INFORMACION DE BENEFICIARIOS FINALES"
@@ -274,7 +276,7 @@ beneficiario_2_nombre:
   target_strategy: offset
   offset:
     row: 3
-    col: 0
+    col: 1
 
 banco_nombre:
   label: "7. INFORMACION FINANCIERA DE LA ORGANIZACION"

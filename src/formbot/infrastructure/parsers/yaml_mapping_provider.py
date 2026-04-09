@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+import re
 from pathlib import Path
 from typing import Any
 
@@ -8,6 +10,25 @@ import yaml
 from formbot.domain.exceptions import MappingRuleError
 from formbot.domain.models import MappingRule
 from formbot.domain.ports.mapping_provider import MappingProvider
+
+LOGGER = logging.getLogger(__name__)
+
+# Patrón de encabezado de sección (ej. "4. REFERENCIAS COMERCIALES")
+_SECTION_HEADER_RE = re.compile(r"^\d+\s*\.")
+
+# Campos de firma que nunca deben bloquear el fill
+_FIRMA_FIELDS = frozenset({
+    "firma_representante_nombre",
+    "firma_representante_documento",
+    "firma_diligencio_nombre",
+    "firma_diligencio_documento",
+})
+
+# Campos web/opcionales que raramente existen en todos los forms
+_OPTIONAL_FIELDS = frozenset({"pagina_web", "correo_gerencia", "correo_notificaciones"})
+
+# Offset de columna a partir del cual se emite aviso
+_COL_OFFSET_WARN = 6
 
 
 class YamlMappingProvider(MappingProvider):
@@ -123,6 +144,61 @@ class YamlMappingProvider(MappingProvider):
         if not isinstance(mark_symbol, str) or not mark_symbol.strip():
             raise MappingRuleError(
                 f"La regla '{field_name}' tiene 'mark_symbol' invalido; debe ser texto no vacio"
+            )
+
+        # ── Validaciones preventivas ──────────────────────────────────────────
+        # 1. Campos de firma marcados como required=True bloquean el pipeline
+        if required and field_name in _FIRMA_FIELDS:
+            LOGGER.warning(
+                "MAPPING [%s]: 'required: true' en campo de firma '%s' — "
+                "si el label no existe en el form el fill falla. Usa 'required: false'.",
+                field_name, field_name,
+            )
+
+        # 2. Campos opcionales por naturaleza marcados como required=True
+        if required and field_name in _OPTIONAL_FIELDS:
+            LOGGER.warning(
+                "MAPPING [%s]: 'required: true' en campo opcional '%s' — "
+                "no todos los formularios incluyen este campo. Usa 'required: false'.",
+                field_name, field_name,
+            )
+
+        # 3. Campos mark (boolean) con required=True raramente tienen sentido
+        if required and write_mode.strip().lower() == "mark":
+            LOGGER.warning(
+                "MAPPING [%s]: 'required: true' combinado con 'write_mode: mark' — "
+                "los campos de marcación suelen ser opcionales.",
+                field_name,
+            )
+
+        # 4. col_offset inusualmente alto (>= 6): posible error de diseño
+        if col_offset >= _COL_OFFSET_WARN:
+            LOGGER.warning(
+                "MAPPING [%s]: col_offset=%d es inusualmente alto. "
+                "Verifica que la celda destino esté realmente %d columnas a la derecha del label '%s'.",
+                field_name, col_offset, col_offset, label,
+            )
+
+        # 5. col_offset=0 con row_offset>1 sobre un encabezado de sección:
+        #    escribe en la misma columna que el header, no en la columna del valor.
+        if col_offset == 0 and row_offset > 1 and _SECTION_HEADER_RE.match(label.strip()):
+            LOGGER.warning(
+                "MAPPING [%s]: col_offset=0 sobre encabezado de sección '%s' (row=%d). "
+                "El valor se escribe en la MISMA columna que el header. "
+                "Probablemente necesites col_offset=1.",
+                field_name, label, row_offset,
+            )
+
+        # 6. Nombre del campo no coincide con la sección semántica del label
+        #    Detecta el caso correo_electronico anclado en sección de representante legal.
+        _RL_LABELS = {"datos representante legal", "representante legal", "datos del representante"}
+        _label_norm = label.strip().lower()
+        if field_name == "correo_electronico" and any(t in _label_norm for t in _RL_LABELS):
+            LOGGER.warning(
+                "MAPPING [%s]: el campo 'correo_electronico' (email general de la empresa) "
+                "está anclado en la sección '%s'. "
+                "Si apunta al correo del RL, usa 'representante_legal_correo' como field_name.",
+                field_name, label,
             )
 
         return MappingRule(
