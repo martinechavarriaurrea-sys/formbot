@@ -531,6 +531,7 @@ INDEX_HTML: Final[str] = """<!doctype html>
       transition: transform .14s ease, filter .18s ease, opacity .15s;
     }
     .btn-primary { background: linear-gradient(135deg, var(--accent), #ff934f); color: #1f1309; }
+    .btn-auto { background: linear-gradient(135deg, #1d6f42, #2ea863); color: #fff; }
     .btn-secondary { background: linear-gradient(135deg, var(--accent-2), #8ce7f2); color: #05343b; }
     .btn-ghost {
       background: transparent; border: 1.5px solid var(--line);
@@ -668,6 +669,9 @@ INDEX_HTML: Final[str] = """<!doctype html>
       <button class="btn-primary" id="analyze-btn" onclick="analyzeTemplate()" disabled>
         &#128269; Analizar documento
       </button>
+      <button class="btn-auto" id="auto-btn" onclick="autoFill()" disabled>
+        &#9889; Registro autom&#225;tico
+      </button>
     </div>
 
     <div class="progress-bar" id="progress1"></div>
@@ -711,6 +715,7 @@ INDEX_HTML: Final[str] = """<!doctype html>
   const dropZone   = document.getElementById("drop-zone");
   const fileInput  = document.getElementById("file-input");
   const analyzeBtn = document.getElementById("analyze-btn");
+  const autoBtn    = document.getElementById("auto-btn");
   const fmtPill    = document.getElementById("fmt-pill");
   const fileNameEl = document.getElementById("file-name-text");
   const fileInfo   = document.getElementById("file-info");
@@ -758,6 +763,7 @@ INDEX_HTML: Final[str] = """<!doctype html>
       fmtPill.style.display = "none";
     }
     analyzeBtn.disabled = false;
+    autoBtn.disabled    = false;
     setStatus1("Listo para analizar: " + file.name);
   }
 
@@ -906,6 +912,46 @@ INDEX_HTML: Final[str] = """<!doctype html>
       .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
   function escAttr(s) { return escHtml(s); }
+
+  /* ── Registro automático (un clic) ── */
+  async function autoFill() {
+    if (!currentFile) return;
+    autoBtn.disabled    = true;
+    analyzeBtn.disabled = true;
+    prog1.style.display = "block";
+    setStatus1("Diligenciando autom\u00e1ticamente con perfil ASTECO\u2026", "run");
+
+    const body = new FormData();
+    body.append("template", currentFile);
+
+    try {
+      const resp = await fetch("/api/fill-auto", { method: "POST", body });
+      if (!resp.ok) {
+        const json = await resp.json().catch(() => ({}));
+        throw new Error(json.detail || "Error " + resp.status);
+      }
+
+      const filled   = parseInt(resp.headers.get("X-Fields-Filled") || "0", 10);
+      const blob     = await resp.blob();
+      const filename = extractFilename(resp.headers.get("content-disposition"));
+      const url      = URL.createObjectURL(blob);
+      const a        = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+
+      setStatus1(
+        "\u2705 Registro completado: " + filled + " campo(s) diligenciados. Descargando: " + filename,
+        "ok"
+      );
+    } catch (err) {
+      setStatus1("Error: " + err.message, "err");
+    } finally {
+      autoBtn.disabled    = false;
+      analyzeBtn.disabled = false;
+      prog1.style.display = "none";
+    }
+  }
 </script>
 </body>
 </html>
@@ -1027,6 +1073,87 @@ async def fill_smart(
 
         payload = output_path.read_bytes()
         headers = {"Content-Disposition": f'attachment; filename="{output_filename}"'}
+        return Response(content=payload, media_type=mime_type, headers=headers)
+
+
+@app.post("/api/fill-auto")
+async def fill_auto(
+    template: UploadFile = File(...),
+) -> Response:
+    """Diligencia el documento en un solo paso: escanea, sugiere desde el perfil y descarga.
+
+    No requiere intervención del usuario. Solo llena campos con sugerencia del perfil maestro.
+    Retorna el documento con el encabezado X-Fields-Filled indicando cuántos campos se llenaron.
+    """
+    from formbot.infrastructure.document_scanners.field_scanner import scan_document
+
+    with tempfile.TemporaryDirectory(prefix="formbot-auto-") as tmpdir:
+        tmp = Path(tmpdir)
+        template_path = tmp / _safe_filename(template.filename, "template.xlsx")
+        template_path.write_bytes(await template.read())
+
+        suffix = template_path.suffix.lower()
+        if suffix not in SUPPORTED_EXTENSIONS:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": f"Formato '{suffix}' no soportado."},
+            )
+        mime_type = SUPPORTED_EXTENSIONS[suffix]
+        output_filename = f"{template_path.stem}_auto_{uuid4().hex[:8]}{suffix}"
+        output_path = tmp / output_filename
+
+        try:
+            detected = scan_document(template_path)
+        except Exception as exc:
+            LOGGER.exception("Error escaneando documento en fill-auto")
+            return JSONResponse(
+                status_code=500,
+                content={"detail": f"Error al analizar el documento: {exc}"},
+            )
+
+        profile = _load_master_profile()
+        active: list[dict] = []
+        for field in detected:
+            suggested = _suggest_from_profile(field.label, profile)
+            if suggested and suggested.strip():
+                active.append({
+                    "field_key": field.field_key,
+                    "label":     field.label,
+                    "value":     suggested,
+                })
+
+        if not active:
+            return JSONResponse(
+                status_code=422,
+                content={"detail": "No se encontró ningún campo con sugerencia del perfil."},
+            )
+
+        try:
+            if suffix in {".xlsx", ".xlsm"}:
+                _fill_excel_smart(template_path, active, output_path)
+            elif suffix == ".pdf":
+                _fill_via_adapter_smart(template_path, active, output_path, col_offset=0, row_offset=0)
+            elif suffix == ".docx":
+                _fill_via_adapter_smart(template_path, active, output_path, col_offset=1, row_offset=0)
+            else:
+                return JSONResponse(
+                    status_code=400,
+                    content={"detail": f"Formato '{suffix}' no soportado."},
+                )
+        except FormBotError as exc:
+            return JSONResponse(status_code=400, content={"detail": str(exc)})
+        except Exception as exc:
+            LOGGER.exception("Error en fill-auto")
+            return JSONResponse(
+                status_code=500,
+                content={"detail": f"Error al diligenciar: {type(exc).__name__}: {exc}"},
+            )
+
+        payload = output_path.read_bytes()
+        headers = {
+            "Content-Disposition": f'attachment; filename="{output_filename}"',
+            "X-Fields-Filled":     str(len(active)),
+        }
         return Response(content=payload, media_type=mime_type, headers=headers)
 
 
