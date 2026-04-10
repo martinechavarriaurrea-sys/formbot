@@ -412,6 +412,197 @@ def _suggest_from_profile(label: str, profile: dict[str, Any]) -> str | None:
 
 
 # ---------------------------------------------------------------------------
+# Smart Mapping — Fases 1-4 (confianza + validación + interacción)
+# ---------------------------------------------------------------------------
+
+_CONF_HIGH: float = 0.80    # >= alta  → asignar automáticamente
+_CONF_MEDIUM: float = 0.50  # >= media → solicitar confirmación al usuario
+
+_KNOWN_DATE_HISTORICAL: frozenset[str] = frozenset({
+    "vencimiento", "expedicion", "constitucion", "apertura",
+    "nacimiento", "emision", "fundacion", "matricula", "creacion", "vigencia",
+})
+
+# Tipos esperados por clave de perfil — usados en validación cruzada
+_KEY_TYPE: dict[str, str] = {
+    "nit_completo":                "nit",
+    "numero_identificacion_nit":   "nit",
+    "digito_verificacion":         "digit",
+    "contador_empresa_nit":        "nit",
+    "referencia_1_nit":            "nit",
+    "referencia_2_nit":            "nit",
+    "correo_electronico":          "email",
+    "representante_legal_correo":  "email",
+    "contacto_correo":             "email",
+    "telefono_fijo":               "phone",
+    "celular":                     "phone",
+    "contacto_celular":            "phone",
+    "representante_legal_celular": "phone",
+    "telefono_alternativo":        "phone",
+    "numero_cuenta":               "numeric",
+}
+
+_KEY_READABLE: dict[str, str] = {
+    "nit_completo":                "NIT completo (con DV)",
+    "numero_identificacion_nit":   "Número de NIT",
+    "digito_verificacion":         "Dígito de verificación",
+    "razon_social":                "Razón social",
+    "nombre_comercial":            "Nombre comercial",
+    "correo_electronico":          "Correo electrónico",
+    "telefono_fijo":               "Teléfono fijo",
+    "celular":                     "Celular",
+    "tipo_identificacion":         "Tipo de identificación",
+    "tipo_persona":                "Tipo de persona",
+    "tipo_empresa":                "Tipo de empresa",
+    "representante_legal_nombre":  "Nombre del representante legal",
+    "representante_legal_documento": "Documento del representante",
+    "ciudad_municipio":            "Ciudad / municipio",
+    "departamento":                "Departamento",
+    "pais":                        "País",
+    "direccion_principal":         "Dirección principal",
+    "banco_nombre":                "Banco",
+    "numero_cuenta":               "Número de cuenta",
+    "tipo_cuenta":                 "Tipo de cuenta",
+    "contacto_nombre":             "Nombre de contacto",
+    "actividad_economica":         "Actividad económica",
+    "matricula_mercantil":         "Matrícula mercantil",
+}
+
+
+def _type_mismatch_penalty(profile_key: str, value: str) -> float:
+    """FASE 2 — Validación de tipo: retorna penalización si el valor no concuerda."""
+    expected = _KEY_TYPE.get(profile_key)
+    if not expected:
+        return 0.0
+    digits = re.sub(r"\D", "", value)
+    if expected == "email":
+        parts = value.split("@")
+        return 0.0 if (len(parts) == 2 and "." in parts[1]) else -0.50
+    if expected in {"nit", "numeric"}:
+        if "@" in value:
+            return -0.50   # email en campo NIT
+        return 0.0 if digits else -0.40
+    if expected == "phone":
+        if "@" in value:
+            return -0.50
+        return 0.0 if len(digits) >= 7 else -0.30
+    if expected == "digit":
+        s = value.strip()
+        return 0.0 if (s.isdigit() and len(s) <= 2) else -0.30
+    return 0.0
+
+
+def _readable_key(key: str) -> str:
+    return _KEY_READABLE.get(key, key.replace("_", " ").title())
+
+
+def _low_conf_result(
+    key: str | None, value: str | None, possible_keys: list[str]
+) -> dict[str, Any]:
+    return {
+        "confidence": 0.0, "confidence_level": "low",
+        "profile_key": key, "value": value,
+        "question": None, "possible_keys": possible_keys,
+    }
+
+
+def _smart_map_field(field_key: str, label: str, profile: dict[str, Any]) -> dict[str, Any]:
+    """
+    Fases 1-4: mapea un campo con semántica, valida el tipo y calcula confianza.
+
+    Retorna dict:
+        confidence        float 0-1
+        confidence_level  "high" | "medium" | "low"
+        profile_key       str | None
+        value             str | None
+        question          str | None  (solo para medium)
+        possible_keys     list[str]
+    """
+    from formbot.shared.utils import normalize_text
+    normalized = normalize_text(label)
+
+    # FASE 1 — Recopilar hints que aplican
+    matches: list[tuple[str, str, int]] = []  # (hint, key, n_words)
+    for hint, key in _PROFILE_HINTS.items():
+        if hint not in normalized:
+            continue
+        if hint == "rut" and "fecha" in normalized:
+            continue
+        matches.append((hint, key, len(hint.split())))
+
+    if not matches:
+        return _low_conf_result(None, None, [])
+
+    # Ordenar: más palabras primero (más específico)
+    matches.sort(key=lambda x: x[2], reverse=True)
+    best_hint, best_key, best_words = matches[0]
+
+    # Caso especial: fecha de hoy
+    if best_key == "fecha_diligenciamiento_hoy":
+        if any(tok in normalized for tok in _KNOWN_DATE_HISTORICAL):
+            return _low_conf_result(None, None, [])
+        return {
+            "confidence": 0.92, "confidence_level": "high",
+            "profile_key": "fecha_diligenciamiento_hoy",
+            "value": _today_str(),
+            "question": None,
+            "possible_keys": ["fecha_diligenciamiento_hoy"],
+        }
+
+    # Valor del perfil
+    profile_value: str | None = None
+    if best_key in profile and profile[best_key] not in (None, False, True):
+        profile_value = str(profile[best_key])
+
+    if profile_value is None:
+        return _low_conf_result(best_key, None, [best_key])
+
+    # FASE 1 — Confianza base según especificidad del hint (n° palabras)
+    base = (
+        0.93 if best_words >= 4
+        else 0.87 if best_words == 3
+        else 0.75 if best_words == 2
+        else 0.55
+    )
+
+    # Penalización por múltiples keys distintos (ambigüedad)
+    unique_keys: list[str] = list(dict.fromkeys(m[1] for m in matches))
+    if len(unique_keys) > 1:
+        base -= 0.10 * (len(unique_keys) - 1)
+
+    # FASE 2 — Validación de tipo
+    base += _type_mismatch_penalty(best_key, profile_value)
+    confidence = round(max(0.0, min(1.0, base)), 4)
+
+    # FASE 3 — Decisión inteligente
+    if confidence >= _CONF_HIGH:
+        return {
+            "confidence": confidence, "confidence_level": "high",
+            "profile_key": best_key, "value": profile_value,
+            "question": None, "possible_keys": unique_keys,
+        }
+
+    if confidence >= _CONF_MEDIUM:
+        # FASE 4 — Generar pregunta clara
+        if len(unique_keys) > 1:
+            opts = " o ".join(f'"{_readable_key(k)}"' for k in unique_keys[:3])
+            question = f"\u00bfEl campo \u00ab{label}\u00bb corresponde a {opts}?"
+        else:
+            question = (
+                f"\u00bf\u00ab{label}\u00bb equivale a "
+                f"\u00ab{_readable_key(best_key)}\u00bb "
+                f"(valor sugerido: \u00ab{profile_value}\u00bb)?"
+            )
+        return {
+            "confidence": confidence, "confidence_level": "medium",
+            "profile_key": best_key, "value": profile_value,
+            "question": question, "possible_keys": unique_keys,
+        }
+
+    return _low_conf_result(best_key, profile_value, unique_keys)
+
+
+# ---------------------------------------------------------------------------
 # HTML de la interfaz (2 pasos)
 # ---------------------------------------------------------------------------
 
@@ -632,6 +823,53 @@ INDEX_HTML: Final[str] = """<!doctype html>
       from { opacity: 0; transform: translateY(10px); }
       to   { opacity: 1; transform: translateY(0); }
     }
+
+    /* ── Smart Analysis UI ── */
+    .btn-smart { background: linear-gradient(135deg, #7c3aed, #a855f7); color: #fff; }
+
+    .bucket { margin-bottom: 18px; }
+    .bucket-header {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; font-weight: 700;
+      padding: 8px 14px; border-radius: 10px;
+      margin-bottom: 10px;
+    }
+    .bucket-auto-hdr    { background: #edfaf3; color: #0f8b5f; }
+    .bucket-confirm-hdr { background: #fff8e8; color: #b07c00; }
+    .bucket-reject-hdr  { background: #f3f3f6; color: #5a5a72; }
+
+    .smart-field {
+      border: 1.5px solid var(--line); border-radius: 12px;
+      padding: 12px 14px; margin-bottom: 8px;
+    }
+    .smart-field.s-auto   { border-color: #b8ecd9; background: #f0fbf5; }
+    .smart-field.s-confirm{ border-color: #ffe5a0; background: #fffbf0; }
+    .smart-field.s-reject { border-color: #e0e0e8; background: #f8f8fb; }
+
+    .sf-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .sf-label { font-size: 12px; font-weight: 700; color: #1e3359; word-break: break-word; }
+    .sf-value { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: #1d6f42; margin-bottom: 4px; }
+    .sf-question { font-size: 12px; color: #7a6000; margin: 5px 0; }
+    .sf-reason { font-size: 11px; color: #888; margin-bottom: 5px; }
+
+    .conf-badge {
+      white-space: nowrap; font-size: 10px; font-weight: 700;
+      padding: 2px 9px; border-radius: 999px; flex-shrink: 0;
+    }
+    .cb-high   { background: #d4f3e3; color: #0f8b5f; }
+    .cb-medium { background: #fff0c0; color: #856300; }
+    .cb-low    { background: #ebebf0; color: #666; }
+
+    .smart-input {
+      width: 100%; padding: 8px 10px;
+      font-size: 13px; font-family: "Space Grotesk", sans-serif;
+      border: 1.5px solid #d0dff5; border-radius: 8px;
+      background: #fff; color: var(--ink); outline: none;
+      transition: border-color .18s;
+    }
+    .smart-input:focus       { border-color: var(--accent-2); }
+    .smart-input.s-confirm-i { border-color: #ffe0a0; }
+    .smart-input.s-reject-i  { border-color: #ddd; }
   </style>
 </head>
 <body>
@@ -669,6 +907,9 @@ INDEX_HTML: Final[str] = """<!doctype html>
       <button class="btn-primary" id="analyze-btn" onclick="analyzeTemplate()" disabled>
         &#128269; Analizar documento
       </button>
+      <button class="btn-smart" id="smart-btn" onclick="smartAnalyze()" disabled>
+        &#129504; Smart Analysis
+      </button>
       <button class="btn-auto" id="auto-btn" onclick="autoFill()" disabled>
         &#9889; Registro autom&#225;tico
       </button>
@@ -705,12 +946,44 @@ INDEX_HTML: Final[str] = """<!doctype html>
     <div class="status" id="status2" style="display:none"></div>
   </section>
 
+
+  <!-- ── PASO 3: Smart Analysis ── -->
+  <section class="card" id="step3" style="display:none; margin-top:18px;">
+    <div class="step2-header">
+      <div>
+        <div class="step2-title" id="step3-title">Smart Analysis</div>
+        <div class="step2-meta" id="step3-meta"></div>
+      </div>
+      <button class="btn-ghost" onclick="resetToStep1()">&#8592; Cargar otro</button>
+    </div>
+
+    <!-- Bucket: Auto-asignados -->
+    <div class="bucket" id="bucket-auto"></div>
+
+    <!-- Bucket: Requieren confirmaci&#243;n -->
+    <div class="bucket" id="bucket-confirm"></div>
+
+    <!-- Bucket: Rechazados / manuales -->
+    <div class="bucket" id="bucket-reject"></div>
+
+    <hr class="divider">
+    <div class="actions">
+      <button class="btn-primary" id="smart-fill-btn" onclick="smartFill()">
+        &#9654; Completar y Descargar
+      </button>
+      <button class="btn-ghost" onclick="resetToStep1()">&#10005; Cancelar</button>
+    </div>
+    <div class="progress-bar" id="progress3"></div>
+    <div class="status" id="status3" style="display:none"></div>
+  </section>
+
 </div>
 
 <script>
   /* ── Estado ── */
   let currentFile = null;
   let detectedFields = [];
+  let smartData = null;
 
   const dropZone   = document.getElementById("drop-zone");
   const fileInput  = document.getElementById("file-input");
@@ -764,6 +1037,7 @@ INDEX_HTML: Final[str] = """<!doctype html>
     }
     analyzeBtn.disabled = false;
     autoBtn.disabled    = false;
+    document.getElementById("smart-btn").disabled = false;
     setStatus1("Listo para analizar: " + file.name);
   }
 
@@ -895,6 +1169,9 @@ INDEX_HTML: Final[str] = """<!doctype html>
     status2.style.display = "none";
     detectedFields = [];
     fieldsGrid.innerHTML = "";
+    const s3 = document.getElementById("step3");
+    if (s3) s3.style.display = "none";
+    smartData = null;
     setStatus1("Carga un formulario para comenzar.");
   }
 
@@ -950,6 +1227,196 @@ INDEX_HTML: Final[str] = """<!doctype html>
       autoBtn.disabled    = false;
       analyzeBtn.disabled = false;
       prog1.style.display = "none";
+    }
+  }
+
+  /* ── Smart Analysis ── */
+  async function smartAnalyze() {
+    if (!currentFile) return;
+    const smartBtn = document.getElementById("smart-btn");
+    smartBtn.disabled   = true;
+    analyzeBtn.disabled = true;
+    autoBtn.disabled    = true;
+    prog1.style.display = "block";
+    setStatus1("Analizando con sistema de confianza\u2026", "run");
+
+    const body = new FormData();
+    body.append("template", currentFile);
+
+    try {
+      const resp = await fetch("/api/smart-analyze", { method: "POST", body });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.detail || "Error " + resp.status);
+
+      smartData = data;
+      renderSmartResults(data);
+      const s3 = document.getElementById("step3");
+      s3.style.display = "block";
+      s3.scrollIntoView({ behavior: "smooth", block: "start" });
+      const sm = data.summary;
+      setStatus1(
+        "\u2705 Smart Analysis: " + sm.auto_mapped + " auto \u00b7 " +
+        sm.needs_confirmation + " confirmar \u00b7 " + sm.rejected + " sin asignar.",
+        "ok"
+      );
+    } catch (err) {
+      setStatus1("Error: " + err.message, "err");
+    } finally {
+      smartBtn.disabled   = false;
+      analyzeBtn.disabled = false;
+      autoBtn.disabled    = false;
+      prog1.style.display = "none";
+    }
+  }
+
+  function renderSmartResults(data) {
+    const sm = data.summary;
+    document.getElementById("step3-title").textContent =
+      "Smart Analysis \u2014 " + sm.total + " campos";
+    document.getElementById("step3-meta").textContent =
+      currentFile.name + " \u00b7 " +
+      sm.auto_mapped + " auto \u00b7 " +
+      sm.needs_confirmation + " confirmar \u00b7 " +
+      sm.rejected + " sin asignar";
+
+    /* ── Bucket: Auto-asignados ── */
+    const autoEl = document.getElementById("bucket-auto");
+    autoEl.innerHTML = "";
+    if (data.auto_mapped.length > 0) {
+      autoEl.innerHTML =
+        '<div class="bucket-header bucket-auto-hdr">\u2705 Auto-asignados (' + data.auto_mapped.length + ')</div>';
+      data.auto_mapped.forEach(f => {
+        autoEl.innerHTML +=
+          '<div class="smart-field s-auto">' +
+            '<div class="sf-row">' +
+              '<span class="sf-label">' + escHtml(f.label) + '</span>' +
+              '<span class="conf-badge cb-high">Alta ' + Math.round(f.confidence_score * 100) + '%</span>' +
+            '</div>' +
+            '<div class="sf-value">' + escHtml(f.value) + '</div>' +
+            '<input type="hidden" data-field="' + escAttr(f.field) + '" data-label="' + escAttr(f.label) + '" value="' + escAttr(f.value) + '">' +
+          '</div>';
+      });
+    }
+
+    /* ── Bucket: Requieren confirmaci\u00f3n ── */
+    const confirmEl = document.getElementById("bucket-confirm");
+    confirmEl.innerHTML = "";
+    if (data.needs_confirmation.length > 0) {
+      confirmEl.innerHTML =
+        '<div class="bucket-header bucket-confirm-hdr">\u26a0\ufe0f Requieren confirmaci\u00f3n (' + data.needs_confirmation.length + ')</div>';
+      data.needs_confirmation.forEach(f => {
+        confirmEl.innerHTML +=
+          '<div class="smart-field s-confirm">' +
+            '<div class="sf-row">' +
+              '<span class="sf-label">' + escHtml(f.label) + '</span>' +
+              '<span class="conf-badge cb-medium">Media ' + Math.round(f.confidence_score * 100) + '%</span>' +
+            '</div>' +
+            '<div class="sf-question">' + escHtml(f.question || "") + '</div>' +
+            '<input type="text" class="smart-input s-confirm-i"' +
+              ' data-field="' + escAttr(f.field) + '"' +
+              ' data-label="' + escAttr(f.label) + '"' +
+              ' value="' + escAttr(f.suggested_value || "") + '"' +
+              ' placeholder="Confirmar valor o dejar vac\u00edo para omitir">' +
+          '</div>';
+      });
+    }
+
+    /* ── Bucket: Sin asignar / manuales ── */
+    const rejectEl = document.getElementById("bucket-reject");
+    rejectEl.innerHTML = "";
+    if (data.rejected.length > 0) {
+      rejectEl.innerHTML =
+        '<div class="bucket-header bucket-reject-hdr">\u274c Sin asignar (' + data.rejected.length + ')</div>';
+      data.rejected.forEach(f => {
+        rejectEl.innerHTML +=
+          '<div class="smart-field s-reject">' +
+            '<div class="sf-row">' +
+              '<span class="sf-label">' + escHtml(f.label) + '</span>' +
+              '<span class="conf-badge cb-low">Baja</span>' +
+            '</div>' +
+            '<div class="sf-reason">' + escHtml(f.reason) + '</div>' +
+            '<input type="text" class="smart-input s-reject-i"' +
+              ' data-field="' + escAttr(f.field) + '"' +
+              ' data-label="' + escAttr(f.label) + '"' +
+              ' value=""' +
+              ' placeholder="Ingresar valor manualmente (opcional)">' +
+          '</div>';
+      });
+    }
+  }
+
+  async function smartFill() {
+    if (!currentFile || !smartData) return;
+    const sfBtn = document.getElementById("smart-fill-btn");
+    sfBtn.disabled = true;
+    document.getElementById("progress3").style.display = "block";
+    const st3 = document.getElementById("status3");
+    st3.style.display = "block";
+    st3.textContent = "Diligenciando\u2026";
+    st3.className = "status run";
+
+    const fields = [];
+
+    /* Auto-asignados (hidden inputs) */
+    document.querySelectorAll('#bucket-auto input[type="hidden"]').forEach(inp => {
+      if (inp.value.trim()) fields.push({
+        field_key: inp.dataset.field,
+        label:     inp.dataset.label,
+        value:     inp.value.trim(),
+      });
+    });
+
+    /* Confirmados por el usuario */
+    document.querySelectorAll('#bucket-confirm input[type="text"]').forEach(inp => {
+      if (inp.value.trim()) fields.push({
+        field_key: inp.dataset.field,
+        label:     inp.dataset.label,
+        value:     inp.value.trim(),
+      });
+    });
+
+    /* Ingresados manualmente en rechazados */
+    document.querySelectorAll('#bucket-reject input[type="text"]').forEach(inp => {
+      if (inp.value.trim()) fields.push({
+        field_key: inp.dataset.field,
+        label:     inp.dataset.label,
+        value:     inp.value.trim(),
+      });
+    });
+
+    if (fields.length === 0) {
+      st3.textContent = "No hay valores para diligenciar. Confirma o ingresa al menos un campo.";
+      st3.className = "status err";
+      sfBtn.disabled = false;
+      document.getElementById("progress3").style.display = "none";
+      return;
+    }
+
+    const body = new FormData();
+    body.append("template", currentFile);
+    body.append("fields",   JSON.stringify(fields));
+
+    try {
+      const resp = await fetch("/api/fill-smart", { method: "POST", body });
+      if (!resp.ok) {
+        const json = await resp.json().catch(() => ({}));
+        throw new Error(json.detail || "Error " + resp.status);
+      }
+      const blob     = await resp.blob();
+      const filename = extractFilename(resp.headers.get("content-disposition"));
+      const url      = URL.createObjectURL(blob);
+      const a        = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      st3.textContent = "\u2705 Listo. Descargando: " + filename;
+      st3.className = "status ok";
+    } catch (err) {
+      st3.textContent = "Error: " + err.message;
+      st3.className = "status err";
+    } finally {
+      sfBtn.disabled = false;
+      document.getElementById("progress3").style.display = "none";
     }
   }
 </script>
@@ -1155,6 +1622,100 @@ async def fill_auto(
             "X-Fields-Filled":     str(len(active)),
         }
         return Response(content=payload, media_type=mime_type, headers=headers)
+
+
+@app.post("/api/smart-analyze")
+async def smart_analyze(
+    template: UploadFile = File(...),
+) -> JSONResponse:
+    """Fases 1-4: escanea el documento y clasifica campos por nivel de confianza.
+
+    Retorna:
+        auto_mapped        → confianza alta, asignación directa
+        needs_confirmation → confianza media, requiere aprobación del usuario
+        rejected           → confianza baja, NUNCA se asignan automáticamente
+    """
+    from formbot.infrastructure.document_scanners.field_scanner import scan_document
+
+    with tempfile.TemporaryDirectory(prefix="formbot-smart-") as tmpdir:
+        tmp = Path(tmpdir)
+        template_path = tmp / _safe_filename(template.filename, "template.xlsx")
+        template_path.write_bytes(await template.read())
+
+        suffix = template_path.suffix.lower()
+        if suffix not in SUPPORTED_EXTENSIONS:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": f"Formato '{suffix}' no soportado."},
+            )
+
+        try:
+            detected = scan_document(template_path)
+        except Exception as exc:
+            LOGGER.exception("smart-analyze: error escaneando documento")
+            return JSONResponse(
+                status_code=500,
+                content={"detail": f"Error al analizar el documento: {exc}"},
+            )
+
+        profile = _load_master_profile()
+        auto_mapped: list[dict] = []
+        needs_confirmation: list[dict] = []
+        rejected: list[dict] = []
+
+        for fld in detected:
+            result = _smart_map_field(fld.field_key, fld.label, profile)
+            level = result["confidence_level"]
+
+            if level == "high" and result["value"] is not None:
+                # FASE 3 → confianza alta: asignar automáticamente
+                auto_mapped.append({
+                    "label":            fld.label,
+                    "field":            fld.field_key,
+                    "value":            result["value"],
+                    "confidence":       "high",
+                    "confidence_score": result["confidence"],
+                })
+            elif level == "medium":
+                # FASE 4 → confianza media: preguntar al usuario
+                needs_confirmation.append({
+                    "label":            fld.label,
+                    "field":            fld.field_key,
+                    "possible_fields":  result["possible_keys"],
+                    "suggested_value":  result["value"],
+                    "question":         result["question"],
+                    "confidence_score": result["confidence"],
+                })
+            else:
+                # FASE 3 → confianza baja: NUNCA asignar
+                if result["profile_key"] and result["value"] is None:
+                    reason = f"Campo '{result['profile_key']}' no está en el perfil"
+                elif result["value"] is not None:
+                    reason = f"Confianza insuficiente ({result['confidence']:.0%})"
+                else:
+                    reason = "Sin coincidencia en el perfil"
+                rejected.append({
+                    "label":  fld.label,
+                    "field":  fld.field_key,
+                    "reason": reason,
+                })
+
+        LOGGER.info(
+            "smart-analyze: total=%d auto=%d confirmar=%d rechazados=%d",
+            len(detected), len(auto_mapped), len(needs_confirmation), len(rejected),
+        )
+        return JSONResponse({
+            "format":             suffix.lstrip("."),
+            "auto_mapped":        auto_mapped,
+            "needs_confirmation": needs_confirmation,
+            "rejected":           rejected,
+            "summary": {
+                "total":              len(detected),
+                "auto_mapped":        len(auto_mapped),
+                "needs_confirmation": len(needs_confirmation),
+                "rejected":           len(rejected),
+            },
+        })
 
 
 @app.post("/api/fill")
