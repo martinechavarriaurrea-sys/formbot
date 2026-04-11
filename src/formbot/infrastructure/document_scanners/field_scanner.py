@@ -128,13 +128,74 @@ def _is_numeric(text: str) -> bool:
     return bool(clean) and clean.isdigit()
 
 
+# FIX: B2/B3 — Longitud máxima admitida para una etiqueta de formulario válida.
+# Textos más largos son párrafos de instrucciones, no campos rellenables.
+_MAX_LABEL_CHARS: int = 90
+
+# FIX: B3 — Primera palabra que indica texto instructivo/decorativo (normalizada).
+_DECORATIVE_FIRST_WORDS: frozenset[str] = frozenset({
+    "por", "nota", "importante", "instruccion", "instrucciones",
+    "aviso", "atencion", "complete", "completar", "llenar",
+    "diligenciar", "registre", "ingrese", "escriba", "firme", "adjunte",
+})
+
+
+def _is_all_caps_multi_word(text: str) -> bool:
+    """True si el texto parece un VALOR en mayúsculas sostenidas, no una etiqueta.
+
+    Detecta casos como 'LABORATORIOS PHARMA SA' o 'JORGE ENRIQUE SALCEDO MORA'
+    que son datos precargados (empresa/persona) y no labels de campo.
+    FIX: B2
+    """
+    # Si contiene ":", "/", "(" el texto tiene estructura de etiqueta → no es un valor
+    if any(c in text for c in (":", "/", "(")):
+        return False
+    # Los caracteres alfabéticos deben estar TODOS en mayúsculas
+    alpha_chars = [c for c in text if c.isalpha()]
+    if not alpha_chars or any(c.islower() for c in alpha_chars):
+        return False
+    # Requiere ≥ 3 palabras para no rechazar etiquetas cortas como "NIT", "BANCO NOMBRE"
+    if len(text.split()) < 3:
+        return False
+    # Excepción: si contiene un token de campo conocido puede ser encabezado de columna válido
+    norm = normalize_text(text)
+    if any(token in norm for token in _KNOWN_LABEL_TOKENS):
+        return False
+    return True
+
+
+def _is_decorative_text(text: str) -> bool:
+    """True si el texto es decorativo/instructivo, no un campo rellenable.
+
+    Filtra párrafos de instrucciones ('Por favor complete todos los campos')
+    y textos demasiado largos para ser etiquetas de formulario.
+    FIX: B3
+    """
+    # Textos demasiado largos para ser labels (párrafos, instrucciones extensas)
+    if len(text) > _MAX_LABEL_CHARS:
+        return True
+    # La primera palabra (normalizada) indica instrucción/decoración
+    norm = normalize_text(text)
+    words = norm.split()
+    if not words:
+        return False
+    return words[0] in _DECORATIVE_FIRST_WORDS
+
+
 def _is_likely_form_label(text: str) -> bool:
     """Heurística: ¿es este texto probablemente una etiqueta de formulario?"""
+    # FIX: B3 — Rechazar texto decorativo/instructivo antes de cualquier otra verificación
+    if _is_decorative_text(text):
+        return False
+    # FIX: B2 — Rechazar valores en MAYÚSCULAS sostenidas (nombres empresa/persona)
+    if _is_all_caps_multi_word(text):
+        return False
     # Termina en dos puntos → definitivamente una etiqueta
     if text.rstrip().endswith(":"):
         return True
     # Texto multi-palabra de longitud razonable → probablemente etiqueta
-    if " " in text and 4 <= len(text) <= 120:
+    # FIX: B3 — límite reducido de 120 → _MAX_LABEL_CHARS para descartar párrafos
+    if " " in text and 4 <= len(text) <= _MAX_LABEL_CHARS:
         return True
     # Palabras clave cortas conocidas como etiquetas
     normalized = normalize_text(text)

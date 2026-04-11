@@ -1,0 +1,20 @@
+# Tests y herramientas de desarrollo
+tests/
+docs/
+scripts/
+.tools/
+tmp_asteco/
+outputs/
+examples/
+
+# Archivos innecesarios en producción
+*.zip
+*.bat
+*.md
+pyproject.toml
+requirements-dev.txt
+CON/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/

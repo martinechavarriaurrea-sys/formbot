@@ -172,6 +172,11 @@ _PROFILE_HINTS: dict[str, str] = {
     "sector": "sector",
 
     # ── Representante legal ──────────────────────────────────────────────────
+    # Suplente ANTES del titular para que "suplente representante legal" no devuelva al titular
+    "suplente representante legal": "representante_legal_suplente_nombre",
+    "representante legal suplente": "representante_legal_suplente_nombre",
+    "representante suplente": "representante_legal_suplente_nombre",
+    "suplente del representante": "representante_legal_suplente_nombre",
     "nombre representante legal": "representante_legal_nombre",
     "nombre del representante": "representante_legal_nombre",
     "representante legal": "representante_legal_nombre",
@@ -205,6 +210,21 @@ _PROFILE_HINTS: dict[str, str] = {
     "nombres y apellidos": "representante_legal_nombre",
 
     # ── Contador ─────────────────────────────────────────────────────────────
+    # Hints específicos de correo/teléfono del contador ANTES de los genéricos
+    # para que "correo del contador" no devuelva el correo de la empresa.
+    "correo del contador": "contador_correo",
+    "correo electronico del contador": "contador_correo",
+    "correo contador": "contador_correo",
+    "email del contador": "contador_correo",
+    "email contador": "contador_correo",
+    "correo firma contable": "contador_correo",
+    "correo de la firma contable": "contador_correo",
+    "telefono del contador": "contador_telefono",
+    "telefono de la firma contable": "contador_telefono",
+    "telefono contador": "contador_telefono",
+    "tel firma contable": "contador_telefono",
+    "nit del contador": "contador_empresa_nit",
+    "nit contador": "contador_empresa_nit",
     "firma contadora": "contador_empresa",
     "empresa contadora": "contador_empresa",
     "nit empresa contadora": "contador_empresa_nit",
@@ -276,8 +296,32 @@ _PROFILE_HINTS: dict[str, str] = {
     "contacto referencia 2": "referencia_2_contacto",
     "cupo de credito 1": "referencia_1_cupo",
     "cupo de credito 2": "referencia_2_cupo",
+    "cupo de credito": "referencia_1_cupo",
+    "cupo credito": "referencia_1_cupo",
+    "cupo aprobado": "referencia_1_cupo",
 
     # ── Beneficiarios finales ────────────────────────────────────────────────
+    # Hints específicos (más palabras) ANTES de los genéricos para que
+    # "fecha expedicion CC beneficiario 2" no devuelva el nombre del beneficiario.
+    "fecha expedicion cc beneficiario 2": "beneficiario_2_fecha_expedicion",
+    "fecha expedicion beneficiario 2": "beneficiario_2_fecha_expedicion",
+    "fecha expedicion cc beneficiario 1": "beneficiario_1_fecha_expedicion",
+    "fecha expedicion beneficiario 1": "beneficiario_1_fecha_expedicion",
+    "porcentaje participacion beneficiario 2": "beneficiario_2_participacion",
+    "participacion accionaria beneficiario 2": "beneficiario_2_participacion",
+    "porcentaje beneficiario 2": "beneficiario_2_participacion",
+    "participacion beneficiario 2": "beneficiario_2_participacion",
+    "beneficiario 2 porcentaje": "beneficiario_2_participacion",
+    "beneficiario 2 participacion": "beneficiario_2_participacion",
+    "porcentaje beneficiario 1": "beneficiario_1_participacion",
+    "participacion beneficiario 1": "beneficiario_1_participacion",
+    "beneficiario 1 porcentaje": "beneficiario_1_participacion",
+    "beneficiario 1 participacion": "beneficiario_1_participacion",
+    "documento beneficiario 2": "beneficiario_2_documento",
+    "cc beneficiario 2": "beneficiario_2_documento",
+    "tipo doc beneficiario 2": "beneficiario_2_tipo_doc",
+    "documento beneficiario 1": "beneficiario_1_documento",
+    "cc beneficiario 1": "beneficiario_1_documento",
     "beneficiario 1": "beneficiario_1_nombre",
     "beneficiario final 1": "beneficiario_1_nombre",
     "nombre beneficiario 1": "beneficiario_1_nombre",
@@ -337,6 +381,9 @@ _PROFILE_HINTS: dict[str, str] = {
     "firma de quien diligencio": "firma_diligencio_nombre",
     "firma diligenciador": "firma_diligencio_nombre",
     "quien diligencio": "firma_diligencio_nombre",
+    "quien diligencia": "firma_diligencio_nombre",
+    "nombre de quien diligencia": "firma_diligencio_nombre",
+    "nombre quien diligencia": "firma_diligencio_nombre",
     "elaborado por": "firma_diligencio_nombre",
     "diligenciado por": "firma_diligencio_nombre",
     "fecha de diligenciamiento": "fecha_diligenciamiento_hoy",
@@ -368,39 +415,73 @@ def _today_str() -> str:
 
 
 def _suggest_from_profile(label: str, profile: dict[str, Any]) -> str | None:
-    """Intenta encontrar un valor sugerido en el perfil para la etiqueta dada."""
+    """Intenta encontrar un valor sugerido en el perfil para la etiqueta dada.
+
+    Estrategia de resolución (en orden de precedencia):
+      1. Match exacto de slug (etiqueta normalizada == clave del perfil).
+      2. Hint manual más ESPECÍFICO que coincida (más palabras = más contexto).
+         Si el hint más específico tiene ≥ 2 palabras y su valor en el perfil
+         es nulo/booleano → devuelve None (no cae en hints genéricos).
+      3. Clave del perfil contenida textualmente en la etiqueta.
+    """
     if not profile:
         return None
 
     from formbot.shared.utils import normalize_text
     normalized = normalize_text(label)
 
-    # 1. Match directo: slug de la etiqueta coincide con una clave del perfil
+    # ── 1. Match directo: slug exacto ────────────────────────────────────────
     slug = "_".join(normalized.split())
     if slug in profile and profile[slug] is not None and not isinstance(profile[slug], bool):
         return str(profile[slug])
 
-    # 2. Hints manuales: fragmento conocido dentro de la etiqueta normalizada
+    # ── 2. Hints manuales: elegir el MÁS ESPECÍFICO (mayor número de palabras) ──
+    # Esto evita que un hint genérico de 1 palabra ("correo", "telefono", "activos")
+    # devuelva datos de la empresa cuando la etiqueta pide datos de otro contexto
+    # ("correo del contador", "activos virtuales", etc.).
+    _fecha_historica: frozenset[str] = frozenset({
+        "vencimiento", "expedicion", "constitucion", "apertura",
+        "nacimiento", "emision", "fundacion", "matricula", "creacion", "vigencia",
+    })
+
+    best_hint: str | None = None
+    best_key:  str | None = None
+    best_words: int = 0
+
     for hint, key in _PROFILE_HINTS.items():
         if hint not in normalized:
             continue
-        # "rut" solo aplica cuando la etiqueta no es sobre una fecha del RUT
         if hint == "rut" and "fecha" in normalized:
             continue
-        # Clave especial: fecha actual — solo si la etiqueta no pide una fecha historica
-        if key == "fecha_diligenciamiento_hoy":
-            _fecha_historica = {"vencimiento", "expedicion", "constitucion",
-                                "apertura", "nacimiento", "emision", "fundacion",
-                                "matricula", "creacion", "vigencia"}
-            if any(tok in normalized for tok in _fecha_historica):
-                continue
-            return _today_str()
-        if key in profile and profile[key] is not None and not isinstance(profile[key], bool):
-            return str(profile[key])
+        n_words = len(hint.split())
+        if n_words > best_words:
+            best_words = n_words
+            best_hint  = hint
+            best_key   = key
 
-    # 3. Clave del perfil contenida en la etiqueta (dirección única, no inversa)
+    if best_key is not None:
+        # Caso especial: fecha de hoy
+        if best_key == "fecha_diligenciamiento_hoy":
+            if any(tok in normalized for tok in _fecha_historica):
+                return None
+            return _today_str()
+
+        profile_value = profile.get(best_key)
+
+        # REGLA CLAVE: si el hint más específico tiene ≥ 2 palabras y el valor
+        # en el perfil está ausente (None) o es booleano, devolver None.
+        # Esto impide que "Correo del contador" use el correo de la empresa,
+        # o que "Activos virtuales" use el total de activos financieros.
+        if best_words >= 2 and (profile_value is None or isinstance(profile_value, bool)):
+            return None
+
+        if profile_value is not None and not isinstance(profile_value, bool):
+            return str(profile_value)
+        # hint de 1 sola palabra con valor nulo → continuar a paso 3
+
+    # ── 3. Clave del perfil contenida en la etiqueta (dirección única) ───────
     # Solo "key_norm in normalized" — evita que etiquetas cortas ("nombre", "cargo")
-    # coincidan con cualquier clave que las contenga ("nombre_comercial", "referencia_1_cargo_contacto").
+    # coincidan con cualquier clave que las contenga.
     for key, value in profile.items():
         if value is None or isinstance(value, bool):
             continue
@@ -1022,6 +1103,25 @@ INDEX_HTML: Final[str] = """<!doctype html>
   });
 
   function setFile(file) {
+    // FIX: B1 — Reset COMPLETO del estado anterior antes de procesar el nuevo archivo.
+    // Ningún resultado de la sesión previa debe sobrevivir a la carga de un nuevo documento.
+    detectedFields = [];
+    smartData = null;
+    fieldsGrid.innerHTML = "";
+    step2.style.display = "none";
+    status2.style.display = "none";
+    const _s3 = document.getElementById("step3");
+    if (_s3) _s3.style.display = "none";
+    const _bAuto = document.getElementById("bucket-auto");
+    if (_bAuto) _bAuto.innerHTML = "";
+    const _bConf = document.getElementById("bucket-confirm");
+    if (_bConf) _bConf.innerHTML = "";
+    const _bRej = document.getElementById("bucket-reject");
+    if (_bRej) _bRej.innerHTML = "";
+    const _st3 = document.getElementById("status3");
+    if (_st3) _st3.style.display = "none";
+    // FIX: B1 — fin reset
+
     currentFile = file;
     const ext = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
     const info = FORMAT_MAP[ext];
