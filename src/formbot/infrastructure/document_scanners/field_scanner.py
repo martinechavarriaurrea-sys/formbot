@@ -209,13 +209,19 @@ def _is_likely_form_label(text: str) -> bool:
 
 
 def _has_adjacent_empty_excel(sheet: object, row: int, col: int) -> bool:
-    """True si hay al menos una celda vacía adyacente (derecha o abajo)."""
+    """True si hay al menos una celda vacía adyacente (derecha o abajo).
+
+    La búsqueda hacia la derecha continúa más allá de celdas ocupadas hasta
+    _INFER_RIGHT_MAX posiciones, igualando la lógica de inferencia del escritor
+    (PrecisionFillUseCase._infer_target) que también evalúa todas las celdas
+    hacia la derecha y elige la de mayor score.
+    """
     try:
         from openpyxl.cell.cell import MergedCell
     except ImportError:
         return False
 
-    # Escanear hacia la derecha
+    # Escanear hacia la derecha (sin parar en la primera celda ocupada)
     for dc in range(1, _INFER_RIGHT_MAX + 1):
         try:
             cell = sheet.cell(row=row, column=col + dc)  # type: ignore[union-attr]
@@ -226,10 +232,10 @@ def _has_adjacent_empty_excel(sheet: object, row: int, col: int) -> bool:
         val = cell.value
         if val is None or str(val).strip() == "":
             return True
-        # Celda no vacía: detenemos el escaneo hacia la derecha
-        break
 
-    # Escanear hacia abajo
+    # Escanear hacia abajo (un break sigue siendo correcto: si la celda
+    # inmediata debajo está ocupada, las siguientes tampoco son el destino
+    # natural para este label)
     for dr in range(1, _INFER_DOWN_MAX + 1):
         try:
             cell = sheet.cell(row=row + dr, column=col)  # type: ignore[union-attr]
