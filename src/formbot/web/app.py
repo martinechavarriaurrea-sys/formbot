@@ -1206,6 +1206,8 @@ INDEX_HTML: Final[str] = """<!doctype html>
         '<input type="text"' +
           ' name="' + escAttr(field.field_key) + '"' +
           ' data-label="' + escAttr(field.label) + '"' +
+          ' data-sheet="' + escAttr(field.sheet || "") + '"' +
+          ' data-row="' + escAttr(String(field.row ?? "")) + '"' +
           ' value="' + escAttr(field.suggested_value || "") + '"' +
           ' class="' + (hasSuggestion ? "from-profile" : "") + '"' +
           ' placeholder="Dejar vacío para omitir"' +
@@ -1219,9 +1221,12 @@ INDEX_HTML: Final[str] = """<!doctype html>
     const inputs = fieldsGrid.querySelectorAll("input[type='text']");
     const fields = [];
     inputs.forEach(inp => {
+      const r = inp.dataset.row ? parseInt(inp.dataset.row, 10) : undefined;
       fields.push({
         field_key: inp.name,
         label:     inp.dataset.label,
+        sheet:     inp.dataset.sheet || undefined,
+        row:       isNaN(r) ? undefined : r,
         value:     inp.value,
       });
     });
@@ -1393,7 +1398,7 @@ INDEX_HTML: Final[str] = """<!doctype html>
               '<span class="conf-badge cb-high">Alta ' + Math.round(f.confidence_score * 100) + '%</span>' +
             '</div>' +
             '<div class="sf-value">' + escHtml(f.value) + '</div>' +
-            '<input type="hidden" data-field="' + escAttr(f.field) + '" data-label="' + escAttr(f.label) + '" value="' + escAttr(f.value) + '">' +
+            '<input type="hidden" data-field="' + escAttr(f.field) + '" data-label="' + escAttr(f.label) + '" data-sheet="' + escAttr(f.sheet || "") + '" data-row="' + escAttr(String(f.row ?? "")) + '" value="' + escAttr(f.value) + '">' +
           '</div>';
       });
     }
@@ -1415,6 +1420,8 @@ INDEX_HTML: Final[str] = """<!doctype html>
             '<input type="text" class="smart-input s-confirm-i"' +
               ' data-field="' + escAttr(f.field) + '"' +
               ' data-label="' + escAttr(f.label) + '"' +
+              ' data-sheet="' + escAttr(f.sheet || "") + '"' +
+              ' data-row="' + escAttr(String(f.row ?? "")) + '"' +
               ' value="' + escAttr(f.suggested_value || "") + '"' +
               ' placeholder="Confirmar valor o dejar vac\u00edo para omitir">' +
           '</div>';
@@ -1438,6 +1445,8 @@ INDEX_HTML: Final[str] = """<!doctype html>
             '<input type="text" class="smart-input s-reject-i"' +
               ' data-field="' + escAttr(f.field) + '"' +
               ' data-label="' + escAttr(f.label) + '"' +
+              ' data-sheet="' + escAttr(f.sheet || "") + '"' +
+              ' data-row="' + escAttr(String(f.row ?? "")) + '"' +
               ' value=""' +
               ' placeholder="Ingresar valor manualmente (opcional)">' +
           '</div>';
@@ -1459,27 +1468,39 @@ INDEX_HTML: Final[str] = """<!doctype html>
 
     /* Auto-asignados (hidden inputs) */
     document.querySelectorAll('#bucket-auto input[type="hidden"]').forEach(inp => {
-      if (inp.value.trim()) fields.push({
+      if (!inp.value.trim()) return;
+      const r = inp.dataset.row ? parseInt(inp.dataset.row, 10) : undefined;
+      fields.push({
         field_key: inp.dataset.field,
         label:     inp.dataset.label,
+        sheet:     inp.dataset.sheet || undefined,
+        row:       isNaN(r) ? undefined : r,
         value:     inp.value.trim(),
       });
     });
 
     /* Confirmados por el usuario */
     document.querySelectorAll('#bucket-confirm input[type="text"]').forEach(inp => {
-      if (inp.value.trim()) fields.push({
+      if (!inp.value.trim()) return;
+      const r = inp.dataset.row ? parseInt(inp.dataset.row, 10) : undefined;
+      fields.push({
         field_key: inp.dataset.field,
         label:     inp.dataset.label,
+        sheet:     inp.dataset.sheet || undefined,
+        row:       isNaN(r) ? undefined : r,
         value:     inp.value.trim(),
       });
     });
 
     /* Ingresados manualmente en rechazados */
     document.querySelectorAll('#bucket-reject input[type="text"]').forEach(inp => {
-      if (inp.value.trim()) fields.push({
+      if (!inp.value.trim()) return;
+      const r = inp.dataset.row ? parseInt(inp.dataset.row, 10) : undefined;
+      fields.push({
         field_key: inp.dataset.field,
         label:     inp.dataset.label,
+        sheet:     inp.dataset.sheet || undefined,
+        row:       isNaN(r) ? undefined : r,
         value:     inp.value.trim(),
       });
     });
@@ -1570,6 +1591,7 @@ async def analyze_template(
                 "field_key":       field.field_key,
                 "label":           field.label,
                 "sheet":           field.sheet,
+                "row":             field.row,
                 "suggested_value": suggested or "",
             })
 
@@ -1686,6 +1708,8 @@ async def fill_auto(
                 active.append({
                     "field_key": field.field_key,
                     "label":     field.label,
+                    "sheet":     field.sheet,
+                    "row":       field.row,
                     "value":     suggested,
                 })
 
@@ -1772,6 +1796,8 @@ async def smart_analyze(
                 auto_mapped.append({
                     "label":            fld.label,
                     "field":            fld.field_key,
+                    "sheet":            fld.sheet,
+                    "row":              fld.row,
                     "value":            result["value"],
                     "confidence":       "high",
                     "confidence_score": result["confidence"],
@@ -1781,6 +1807,8 @@ async def smart_analyze(
                 needs_confirmation.append({
                     "label":            fld.label,
                     "field":            fld.field_key,
+                    "sheet":            fld.sheet,
+                    "row":              fld.row,
                     "possible_fields":  result["possible_keys"],
                     "suggested_value":  result["value"],
                     "question":         result["question"],
@@ -1797,6 +1825,8 @@ async def smart_analyze(
                 rejected.append({
                     "label":  fld.label,
                     "field":  fld.field_key,
+                    "sheet":  fld.sheet,
+                    "row":    fld.row,
                     "reason": reason,
                 })
 
@@ -1906,6 +1936,8 @@ def _fill_excel_smart(template_path: Path, fields: list[dict], output_path: Path
             column_offset=0,
             required=False,
             target_strategy="offset_or_infer",
+            sheet_name=f.get("sheet") or None,
+            hint_row=f.get("row") or None,
         ))
         data[key] = value
 

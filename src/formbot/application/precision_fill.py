@@ -338,22 +338,37 @@ class PrecisionFillUseCase:
                 f"(label='{rule.label}', aliases={list(rule.aliases)})"
             )
 
-        weighted.sort(
-            key=lambda item: (
-                item[1],
-                item[2],
-                -item[0].position.row,
-                -item[0].position.column,
-            ),
-            reverse=True,
-        )
+        # Si se conoce la fila esperada (hint_row), ordenar por proximidad a esa fila
+        # para seleccionar la instancia correcta cuando el label se repite en múltiples secciones.
+        if rule.hint_row is not None:
+            hint = rule.hint_row
+            weighted.sort(
+                key=lambda item: (
+                    item[1],
+                    item[2],
+                    -abs(item[0].position.row - hint),
+                ),
+                reverse=True,
+            )
+        else:
+            weighted.sort(
+                key=lambda item: (
+                    item[1],
+                    item[2],
+                    -item[0].position.row,
+                    -item[0].position.column,
+                ),
+                reverse=True,
+            )
         best_candidate, best_score, _ = weighted[0]
         if len(weighted) == 1:
             return best_candidate, best_score
 
         second_candidate, second_score, _ = weighted[1]
+        # No lanzar error de ambigüedad cuando hay hint_row: la proximidad ya desambiguó.
         if (
-            abs(best_score - second_score) < 0.05
+            rule.hint_row is None
+            and abs(best_score - second_score) < 0.05
             and (
                 best_candidate.position.sheet_name != second_candidate.position.sheet_name
                 or best_candidate.position.row != second_candidate.position.row

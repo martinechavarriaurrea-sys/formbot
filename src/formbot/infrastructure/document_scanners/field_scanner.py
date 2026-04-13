@@ -22,6 +22,9 @@ _INFER_RIGHT_MAX = 8
 _INFER_DOWN_MAX = 3
 # Longitud mínima del texto de la etiqueta
 _MIN_LABEL_LEN = 2
+# Tamaño del bloque de filas para detectar secciones: etiquetas con el mismo
+# texto pero en bloques distintos se tratan como campos separados.
+_SECTION_BUCKET_ROWS: int = 20
 
 # Palabras clave conocidas que indican que un texto corto es una etiqueta de formulario
 _KNOWN_LABEL_TOKENS = {
@@ -43,6 +46,8 @@ class DetectedField:
     field_key: str       # Clave snake_case (única dentro del documento)
     label: str           # Texto original de la etiqueta en el documento
     sheet: str | None    # Nombre de la hoja (Excel) o None (PDF/Word)
+    row: int | None = None      # Fila donde se detectó la etiqueta (Excel)
+    column: int | None = None   # Columna donde se detectó la etiqueta (Excel)
 
 
 # ---------------------------------------------------------------------------
@@ -84,7 +89,10 @@ def _scan_excel(path: Path) -> list[DetectedField]:
         return []
 
     fields: list[DetectedField] = []
-    seen_norm: set[str] = set()
+    # Clave de deduplicación: (hoja, texto_normalizado, bucket_de_sección).
+    # Permite que la misma etiqueta aparezca en secciones distintas del formulario
+    # (ej. "Nombre" en datos empresa, representante legal, beneficiario, referencia).
+    seen_pos: set[tuple[str, str, int]] = set()
 
     try:
         for sheet in wb.worksheets:
@@ -104,17 +112,21 @@ def _scan_excel(path: Path) -> list[DetectedField]:
                         continue
 
                     norm = normalize_text(text)
-                    if norm in seen_norm:
+                    section_bucket = cell.row // _SECTION_BUCKET_ROWS
+                    dedup_key = (sheet.title, norm, section_bucket)
+                    if dedup_key in seen_pos:
                         continue
 
                     if not _has_adjacent_empty_excel(sheet, cell.row, cell.column):
                         continue
 
-                    seen_norm.add(norm)
+                    seen_pos.add(dedup_key)
                     fields.append(DetectedField(
                         field_key=label_to_key(text),
                         label=text,
                         sheet=sheet.title,
+                        row=cell.row,
+                        column=cell.column,
                     ))
     finally:
         wb.close()

@@ -32,6 +32,7 @@ class MappingRule:
     row_offset: int = 0
     column_offset: int = 0
     sheet_name: str | None = None
+    hint_row: int | None = None   # Fila aproximada del label (desambigua duplicados en formularios multi-sección)
     required: bool = True
     aliases: tuple[str, ...] = ()
     value_type: str | None = None
