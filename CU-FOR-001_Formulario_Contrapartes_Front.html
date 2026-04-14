@@ -78,8 +78,8 @@
           <div class="grid-3"><div class="field"><label for="direccion">Dirección domicilio principal</label><input id="direccion" name="direccion" type="text"></div><div class="field"><label for="telefono_principal">Teléfono</label><input id="telefono_principal" name="telefono_principal" type="tel"></div><div class="field"><label for="otros_telefonos">Otros teléfonos</label><input id="otros_telefonos" name="otros_telefonos" type="text"></div></div>
           <div class="grid-3"><div class="field"><label for="pais">País</label><input id="pais" name="pais" type="text"></div><div class="field"><label for="departamento">Departamento</label><input id="departamento" name="departamento" type="text"></div><div class="field"><label for="ciudad">Ciudad</label><input id="ciudad" name="ciudad" type="text"></div></div>
           <div class="grid-2"><div class="field"><label for="web">Página web</label><input id="web" name="web" type="url" placeholder="https://"></div><div class="field"><label for="actividad_economica">Actividad económica</label><input id="actividad_economica" name="actividad_economica" type="text"></div></div>
-          <div class="yes-no"><label>Seleccione</label><div class="choices"><label><input type="radio" name="tipo_actividad" value="Independiente"> Independiente</label><label><input type="radio" name="tipo_empresa" value="Privada"> Privada</label><label><input type="radio" name="tipo_empresa" value="Publica"> Pública</label><label><input type="radio" name="tipo_empresa" value="Mixta"> Mixta</label></div></div>
-          <div class="grid-2"><div class="field"><label for="descripcion_actividad">Descripción de actividad</label><textarea id="descripcion_actividad" name="descripcion_actividad"></textarea></div><div class="field"><label for="codigo_ciiu">Código CIIU</label><input id="codigo_ciiu" name="codigo_ciiu" type="text"><label for="bien_servicio">Bien o servicio a entregar / prestar</label><textarea id="bien_servicio" name="bien_servicio"></textarea></div></div>
+          <div class="yes-no"><label>Tipo de empresa</label><div class="choices"><label><input type="radio" name="tipo_empresa" value="Independiente"> Independiente</label><label><input type="radio" name="tipo_empresa" value="Privada"> Privada</label><label><input type="radio" name="tipo_empresa" value="Publica"> Pública</label><label><input type="radio" name="tipo_empresa" value="Mixta"> Mixta</label></div></div>
+          <div class="grid-3"><div class="field"><label for="descripcion_actividad">Descripción de actividad</label><textarea id="descripcion_actividad" name="descripcion_actividad"></textarea></div><div class="field"><label for="codigo_ciiu">Código CIIU</label><input id="codigo_ciiu" name="codigo_ciiu" type="text"></div><div class="field"><label for="bien_servicio">Bien o servicio a entregar / prestar</label><textarea id="bien_servicio" name="bien_servicio"></textarea></div></div>
 
           <p class="subtext">Datos representante legal</p>
           <div class="grid-3"><div class="field"><label for="rl_nombre">Nombre completo</label><input id="rl_nombre" name="rl_nombre" type="text"></div><div class="field"><label for="rl_tipo_doc">Tipo de identificación</label><input id="rl_tipo_doc" name="rl_tipo_doc" type="text"></div><div class="field"><label for="rl_numero_doc">Número</label><input id="rl_numero_doc" name="rl_numero_doc" type="text"></div></div>
@@ -98,8 +98,10 @@
               <div class="field"><label>Goza de reconocimiento público</label><div class="choices"><label><input type="radio" name="pep_reconocimiento" value="Si"> Sí</label><label><input type="radio" name="pep_reconocimiento" value="No"> No</label></div></div>
               <div class="field"><label>Tiene vínculo hasta tercer grado con PEP</label><div class="choices"><label><input type="radio" name="pep_vinculo" value="Si"> Sí</label><label><input type="radio" name="pep_vinculo" value="No"> No</label></div></div>
             </div>
+            <div id="pep_detalle" style="display:none">
             <div class="grid-3"><div class="field"><label for="pep_cargo">Cargo</label><input id="pep_cargo" name="pep_cargo" type="text"></div><div class="field"><label for="pep_fecha_vinculacion">Fecha vinculación</label><input id="pep_fecha_vinculacion" name="pep_fecha_vinculacion" type="date"></div><div class="field"><label for="pep_fecha_desvinculacion">Fecha desvinculación</label><input id="pep_fecha_desvinculacion" name="pep_fecha_desvinculacion" type="date"></div></div>
             <div class="grid-3"><div class="field"><label for="pep_nombre_relacionado">Nombre completo relacionado</label><input id="pep_nombre_relacionado" name="pep_nombre_relacionado" type="text"></div><div class="field"><label for="pep_parentesco">Parentesco</label><input id="pep_parentesco" name="pep_parentesco" type="text"></div><div class="field"><label for="pep_id_relacionado">Número de identificación</label><input id="pep_id_relacionado" name="pep_id_relacionado" type="text"></div></div>
+            </div>
           </div>
 
           <div class="full"><label for="observaciones">Observaciones</label><textarea id="observaciones" name="observaciones"></textarea></div>
@@ -107,9 +109,9 @@
         <article class="section" style="--delay:120ms">
           <h2>2. Operaciones Internacionales y Activos Virtuales</h2>
           <p class="subtext">Activo virtual: representación digital de valor que se puede comercializar o transferir digitalmente y utilizar para pagos o inversiones.</p>
-          <div class="yes-no"><label>¿Realiza operaciones internacionales?</label><div class="choices"><label><input type="radio" name="op_internacionales" value="Si"> Sí</label><label><input type="radio" name="op_internacionales" value="No"> No</label></div><div class="choices"><label><input type="checkbox" name="tipo_operacion" value="Importacion"> Importación</label><label><input type="checkbox" name="tipo_operacion" value="Exportacion"> Exportación</label></div></div>
-          <div class="yes-no"><label>¿Maneja cuentas en el exterior?</label><div class="choices"><label><input type="radio" name="cuentas_exterior" value="Si"> Sí</label><label><input type="radio" name="cuentas_exterior" value="No"> No</label></div><div class="grid-2"><div class="field"><label for="moneda_exterior">Moneda</label><input id="moneda_exterior" name="moneda_exterior" type="text"></div><div class="field"><label for="pais_exterior">País</label><input id="pais_exterior" name="pais_exterior" type="text"></div></div></div>
-          <div class="yes-no"><label>¿Maneja activos virtuales?</label><div class="choices"><label><input type="radio" name="activos_virtuales" value="Si"> Sí</label><label><input type="radio" name="activos_virtuales" value="No"> No</label></div><div class="field"><label for="tipos_activos_virtuales">Si respondió Sí, indique cuáles</label><textarea id="tipos_activos_virtuales" name="tipos_activos_virtuales"></textarea></div><div class="choices"><label><input type="radio" name="intercambio_activos" value="Si"> Intercambio activos virtuales/monedas: Sí</label><label><input type="radio" name="intercambio_activos" value="No"> No</label></div><div class="choices"><label><input type="radio" name="transferencia_activos" value="Si"> Participa/intercambia/transfiere activos virtuales: Sí</label><label><input type="radio" name="transferencia_activos" value="No"> No</label></div></div>
+          <div class="yes-no"><label>¿Realiza operaciones internacionales?</label><div class="choices"><label><input type="radio" name="op_internacionales" value="Si"> Sí</label><label><input type="radio" name="op_internacionales" value="No"> No</label></div><div id="tipo_operacion_wrap" style="display:none"><div class="choices"><label><input type="checkbox" name="tipo_operacion" value="Importacion"> Importación</label><label><input type="checkbox" name="tipo_operacion" value="Exportacion"> Exportación</label></div></div></div>
+          <div class="yes-no"><label>¿Maneja cuentas en el exterior?</label><div class="choices"><label><input type="radio" name="cuentas_exterior" value="Si"> Sí</label><label><input type="radio" name="cuentas_exterior" value="No"> No</label></div><div id="cuentas_exterior_wrap" style="display:none"><div class="grid-2"><div class="field"><label for="moneda_exterior">Moneda</label><input id="moneda_exterior" name="moneda_exterior" type="text"></div><div class="field"><label for="pais_exterior">País</label><input id="pais_exterior" name="pais_exterior" type="text"></div></div></div></div>
+          <div class="yes-no"><label>¿Maneja activos virtuales?</label><div class="choices"><label><input type="radio" name="activos_virtuales" value="Si"> Sí</label><label><input type="radio" name="activos_virtuales" value="No"> No</label></div><div id="activos_virtuales_wrap" style="display:none"><div class="field"><label for="tipos_activos_virtuales">Si respondió Sí, indique cuáles</label><textarea id="tipos_activos_virtuales" name="tipos_activos_virtuales"></textarea></div><div class="choices"><label><input type="radio" name="intercambio_activos" value="Si"> Intercambio activos virtuales/monedas: Sí</label><label><input type="radio" name="intercambio_activos" value="No"> No</label></div><div class="choices"><label><input type="radio" name="transferencia_activos" value="Si"> Participa/intercambia/transfiere activos virtuales: Sí</label><label><input type="radio" name="transferencia_activos" value="No"> No</label></div></div></div>
         </article>
 
         <article class="section" style="--delay:160ms">
@@ -141,8 +143,8 @@
         <article class="section" style="--delay:240ms">
           <h2>5. Gestión Corporativa</h2>
           <div class="yes-no"><label>¿Tiene controles para prevención LA/FT/FPADM?</label><div class="choices"><label><input type="radio" name="control_laft" value="Si"> Sí</label><label><input type="radio" name="control_laft" value="No"> No</label></div></div>
-          <div class="yes-no"><label>¿Debe reportar ante alguna entidad de control?</label><div class="choices"><label><input type="radio" name="reporta_entidad" value="Si"> Sí</label><label><input type="radio" name="reporta_entidad" value="No"> No</label></div><div class="field"><label for="entidad_control">En caso afirmativo, ¿cuál?</label><input id="entidad_control" name="entidad_control" type="text"></div></div>
-          <div class="yes-no"><label>¿Cuenta con certificación de seguridad en cadena de suministro administrada por aduana?</label><div class="choices"><label><input type="radio" name="cert_aduana" value="Si"> Sí</label><label><input type="radio" name="cert_aduana" value="No"> No</label></div><div class="field"><label for="cert_aduana_detalle">Indique cuál o cuáles</label><input id="cert_aduana_detalle" name="cert_aduana_detalle" type="text"></div></div>
+          <div class="yes-no"><label>¿Debe reportar ante alguna entidad de control?</label><div class="choices"><label><input type="radio" name="reporta_entidad" value="Si"> Sí</label><label><input type="radio" name="reporta_entidad" value="No"> No</label></div><div id="entidad_control_wrap" style="display:none"><div class="field"><label for="entidad_control">En caso afirmativo, ¿cuál?</label><input id="entidad_control" name="entidad_control" type="text"></div></div></div>
+          <div class="yes-no"><label>¿Cuenta con certificación de seguridad en cadena de suministro administrada por aduana?</label><div class="choices"><label><input type="radio" name="cert_aduana" value="Si"> Sí</label><label><input type="radio" name="cert_aduana" value="No"> No</label></div><div id="cert_aduana_wrap" style="display:none"><div class="field"><label for="cert_aduana_detalle">Indique cuál o cuáles</label><input id="cert_aduana_detalle" name="cert_aduana_detalle" type="text"></div></div></div>
           <div class="table-wrap"><table><thead><tr><th>Sistema</th><th>Norma</th><th>Fecha certificación</th><th>Organismo certificador</th><th>Vigencia</th></tr></thead><tbody><tr><td><input name="cert_sistema_1" type="text"></td><td><input name="cert_norma_1" type="text"></td><td><input name="cert_fecha_1" type="date"></td><td><input name="cert_organismo_1" type="text"></td><td><input name="cert_vigencia_1" type="text"></td></tr><tr><td><input name="cert_sistema_2" type="text"></td><td><input name="cert_norma_2" type="text"></td><td><input name="cert_fecha_2" type="date"></td><td><input name="cert_organismo_2" type="text"></td><td><input name="cert_vigencia_2" type="text"></td></tr></tbody></table></div>
         </article>
 
@@ -172,8 +174,8 @@
           <h2>7. Información Financiera de la Organización</h2>
           <p class="subtext">Diligencie información de cuentas en entidades financieras y de últimos estados financieros.</p>
           <div class="table-wrap"><table><thead><tr><th>Nombre entidad</th><th>Tipo producto</th><th>Número del producto</th></tr></thead><tbody><tr><td><input name="entidad_1" type="text"></td><td><input name="producto_tipo_1" type="text"></td><td><input name="producto_num_1" type="text"></td></tr><tr><td><input name="entidad_2" type="text"></td><td><input name="producto_tipo_2" type="text"></td><td><input name="producto_num_2" type="text"></td></tr><tr><td><input name="entidad_3" type="text"></td><td><input name="producto_tipo_3" type="text"></td><td><input name="producto_num_3" type="text"></td></tr><tr><td><input name="entidad_4" type="text"></td><td><input name="producto_tipo_4" type="text"></td><td><input name="producto_num_4" type="text"></td></tr></tbody></table></div>
-          <div class="grid-4"><div class="field"><label for="fin_ano">Año</label><input id="fin_ano" name="fin_ano" type="number" min="1900" max="3000"></div><div class="field"><label for="fin_activos">Activos</label><input id="fin_activos" name="fin_activos" type="number" step="0.01" min="0"></div><div class="field"><label for="fin_pasivos">Pasivos</label><input id="fin_pasivos" name="fin_pasivos" type="number" step="0.01" min="0"></div><div class="field"><label for="fin_patrimonio">Patrimonio</label><input id="fin_patrimonio" name="fin_patrimonio" type="number" step="0.01" min="0"></div></div>
-          <div class="grid-3"><div class="field"><label for="fin_ingresos">Ingresos</label><input id="fin_ingresos" name="fin_ingresos" type="number" step="0.01" min="0"></div><div class="field"><label for="fin_egresos">Egresos</label><input id="fin_egresos" name="fin_egresos" type="number" step="0.01" min="0"></div><div class="field"><label for="fin_otros_ingresos">Otros ingresos</label><input id="fin_otros_ingresos" name="fin_otros_ingresos" type="number" step="0.01" min="0"></div></div>
+          <div class="grid-4"><div class="field"><label for="fin_ano">Año</label><input id="fin_ano" name="fin_ano" type="number" min="1900" max="3000"></div><div class="field"><label for="fin_activos">Activos</label><input id="fin_activos" name="fin_activos" type="text" inputmode="numeric" placeholder="0"></div><div class="field"><label for="fin_pasivos">Pasivos</label><input id="fin_pasivos" name="fin_pasivos" type="text" inputmode="numeric" placeholder="0"></div><div class="field"><label for="fin_patrimonio">Patrimonio</label><input id="fin_patrimonio" name="fin_patrimonio" type="text" inputmode="numeric" placeholder="0"></div></div>
+          <div class="grid-3"><div class="field"><label for="fin_ingresos">Ingresos</label><input id="fin_ingresos" name="fin_ingresos" type="text" inputmode="numeric" placeholder="0"></div><div class="field"><label for="fin_egresos">Egresos</label><input id="fin_egresos" name="fin_egresos" type="text" inputmode="numeric" placeholder="0"></div><div class="field"><label for="fin_otros_ingresos">Otros ingresos</label><input id="fin_otros_ingresos" name="fin_otros_ingresos" type="text" inputmode="numeric" placeholder="0"></div></div>
         </article>
         <article class="section" style="--delay:360ms">
           <h2>8. Declaración de Veracidad y Origen de Ingresos</h2>
@@ -322,9 +324,30 @@ Me comprometo a mantener este formulario actualizado y autorizo el uso de la inf
           var raw = localStorage.getItem(storageKey);
           if (!raw) return;
           hydrate(form, JSON.parse(raw));
+          triggerConditionals();
         } catch (err) {
           console.error(err);
         }
+      }
+
+      function toggleShow(id, show) {
+        var el = document.getElementById(id);
+        if (el) el.style.display = show ? "" : "none";
+      }
+
+      function checkedVal(name, val) {
+        var el = form.querySelector('input[name="' + name + '"]:checked');
+        return el ? el.value === val : false;
+      }
+
+      function triggerConditionals() {
+        var pepYes = ["pep_recursos","pep_poder","pep_reconocimiento","pep_vinculo"].some(function(n){ return checkedVal(n,"Si"); });
+        toggleShow("pep_detalle", pepYes);
+        toggleShow("tipo_operacion_wrap", checkedVal("op_internacionales","Si"));
+        toggleShow("cuentas_exterior_wrap", checkedVal("cuentas_exterior","Si"));
+        toggleShow("activos_virtuales_wrap", checkedVal("activos_virtuales","Si"));
+        toggleShow("entidad_control_wrap", checkedVal("reporta_entidad","Si"));
+        toggleShow("cert_aduana_wrap", checkedVal("cert_aduana","Si"));
       }
 
       function validate() {
@@ -341,6 +364,7 @@ Me comprometo a mantener este formulario actualizado y autorizo el uso de la inf
       loadDraft();
       form.addEventListener("input", saveDraft);
       form.addEventListener("change", saveDraft);
+      form.addEventListener("change", triggerConditionals);
 
       validateBtn.addEventListener("click", validate);
 
@@ -368,6 +392,7 @@ Me comprometo a mantener este formulario actualizado y autorizo el uso de la inf
           localStorage.removeItem(storageKey);
           clearAlert();
           if (dateInput) dateInput.value = todayISO();
+          triggerConditionals();
         }, 0);
       });
     })();
