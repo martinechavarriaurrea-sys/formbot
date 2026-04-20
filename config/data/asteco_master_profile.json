@@ -1,5 +1,5 @@
 {
-  "razon_social": "ASOCIACION TECNICA COMERCIAL E INDUSTRIAL S.A.S - ASTECO",
+  "razon_social": "ASOCIACIÓN TÉCNICA COMERCIAL E INDUSTRIAL S.A.S - ASTECO",
   "nombre_comercial": "ASTECO",
   "sigla": "ASTECO S.A.S.",
   "numero_identificacion_nit": "890900240",
@@ -14,7 +14,7 @@
 
   "direccion_principal": "Cra. 54 # 35 - 12",
   "barrio": "La Bayadera",
-  "ciudad_municipio": "Medellin",
+  "ciudad_municipio": "Medellín",
   "departamento": "Antioquia",
   "pais": "Colombia",
   "telefono_fijo": "(604) 4440122",
@@ -79,7 +79,7 @@
   "referencia_1_contacto": "Victor Cardona Morales",
   "referencia_1_cargo_contacto": "Gerente",
   "referencia_1_telefono": "(604) 3817979",
-  "referencia_1_ciudad": "Medellin",
+  "referencia_1_ciudad": "Medellín",
   "referencia_1_antiguedad": "33 años",
   "referencia_1_cupo": "$300.000.000",
 
@@ -88,7 +88,7 @@
   "referencia_2_contacto": "Juan Fernando Caro Alzate",
   "referencia_2_cargo_contacto": "Gerente",
   "referencia_2_telefono": "4799771",
-  "referencia_2_ciudad": "Medellin",
+  "referencia_2_ciudad": "Medellín",
   "referencia_2_antiguedad": "19 años",
   "referencia_2_cupo": "$100.000.000",
 

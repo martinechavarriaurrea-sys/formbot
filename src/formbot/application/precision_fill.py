@@ -428,6 +428,11 @@ class PrecisionFillUseCase:
                 adjustment -= 0.08
             if any(token in label_text for token in ("telefonos", "telefono")):
                 adjustment += 0.04
+        elif field_name in {"contacto_nombre", "contacto_celular", "contacto_correo", "firma_diligencio_nombre"}:
+            if any(token in label_text for token in ("pagos", "cartera", "tesoreria")):
+                adjustment += 0.15
+            if "comercial" in label_text and "pagos" not in label_text:
+                adjustment -= 0.12
         elif field_name == "celular":
             if "contacto pagos" in same_row_context:
                 adjustment -= 0.08
@@ -626,7 +631,7 @@ class PrecisionFillUseCase:
             if anchored is not None:
                 target, target_score = anchored
                 return target, target_score, "Destino inferido por ancla numerica"
-            inferred = self._infer_target(rule, label_position)
+            inferred = self._infer_target(rule, label_position, write_value=value)
             if inferred is None:
                 raise MappingRuleError(
                     f"No se pudo inferir celda destino para campo '{rule.field_name}' "
@@ -646,7 +651,7 @@ class PrecisionFillUseCase:
             target, target_score = anchored
             return target, target_score, "Destino inferido por ancla numerica"
 
-        inferred = self._infer_target(rule, label_position)
+        inferred = self._infer_target(rule, label_position, write_value=value)
         if inferred is None:
             raise MappingRuleError(
                 f"No se pudo inferir celda destino para campo '{rule.field_name}' "
@@ -702,9 +707,15 @@ class PrecisionFillUseCase:
             return None
         return best[0], max(0.0, min(1.0, best[1]))
 
-    def _infer_target(self, rule: MappingRule, label_position: CellPosition) -> tuple[CellPosition, float] | None:
+    def _infer_target(
+        self,
+        rule: MappingRule,
+        label_position: CellPosition,
+        write_value: Any = None,
+    ) -> tuple[CellPosition, float] | None:
         sheet = self._workbook[label_position.sheet_name]
         best: tuple[CellPosition, float] | None = None
+        write_norm = normalize_text(str(write_value)) if write_value is not None else ""
 
         # Prioridad: derecha en misma fila.
         for delta in range(1, self._infer_right_scan + 1):
@@ -717,6 +728,8 @@ class PrecisionFillUseCase:
                 candidate,
                 rule.value_type,
             )
+            if write_norm and self._allow_overwrite_existing:
+                score += self._value_match_bonus(candidate, write_norm)
             if best is None or score > best[1]:
                 best = (candidate, score)
 
@@ -732,6 +745,8 @@ class PrecisionFillUseCase:
                 + self._typed_existing_bonus(candidate, rule.value_type)
                 - _INFER_DOWN_PENALTY
             )
+            if write_norm and self._allow_overwrite_existing:
+                score += self._value_match_bonus(candidate, write_norm)
             if best is None or score > best[1]:
                 best = (candidate, score)
 
@@ -743,6 +758,20 @@ class PrecisionFillUseCase:
         if best[0].column > sheet.max_column + 20:
             return None
         return best[0], max(0.0, min(1.0, best[1]))
+
+    def _value_match_bonus(self, position: CellPosition, write_norm: str) -> float:
+        """Extra score when an occupied cell already holds the value we'd write.
+
+        Ensures we prefer re-writing to the correct pre-filled cell over an
+        adjacent empty cell that happens to be closer to the label.
+        """
+        sheet = self._workbook[position.sheet_name]
+        existing = sheet.cell(row=position.row, column=position.column).value
+        if existing is None:
+            return 0.0
+        if normalize_text(str(existing)) == write_norm:
+            return 0.30
+        return 0.0
 
     def _typed_existing_bonus(self, position: CellPosition, value_type: str | None) -> float:
         if value_type is None:
