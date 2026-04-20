@@ -1,7 +1,18 @@
+# Mapping CU-FOR-001 — Formulario Contraparte TRANSMONSA
+# Convención de offsets:
+#   row: filas desde la celda del label (0 = misma fila, 1 = fila siguiente)
+#   col: columnas desde la celda del label (1 = celda a la derecha)
+# Ejecutar verificacion: python scripts/verificar_offsets.py <template.xlsx>
+
+# ===========================================================================
+# SECCIÓN: Datos iniciales
+# ===========================================================================
+
 fecha_diligenciamiento:
   label: "Fecha de diligenciamiento"
   aliases:
     - "Fecha de diligenciamiento  (DD/MM/AAA)"
+    - "Fecha de diligenciamiento (DD/MM/AAAA)"
   sheet: "Formulario contrapartes"
   required: false
   type: date
@@ -10,10 +21,16 @@ fecha_diligenciamiento:
     row: 0
     col: 2
 
+# ===========================================================================
+# SECCIÓN 1: Información General
+# ===========================================================================
+
 razon_social:
   label: "Nombre o Razon social"
   aliases:
     - "Nombre o Razón social"
+    - "Nombre / Razon social:"
+    - "Nombre o Razón Social:"
   sheet: "Formulario contrapartes"
   required: true
   target_strategy: offset
@@ -23,6 +40,10 @@ razon_social:
 
 nit_completo:
   label: "C.C. / NIT con DV"
+  aliases:
+    - "NIT con DV"
+    - "C.C./NIT:"
+    - "Identificacion:"
   sheet: "Formulario contrapartes"
   required: true
   type: nit
@@ -35,6 +56,8 @@ direccion_principal:
   label: "Direccion domicilio principal"
   aliases:
     - "Dirección domicilio principal:"
+    - "Direccion:"
+    - "Dirección:"
   sheet: "Formulario contrapartes"
   required: true
   target_strategy: offset
@@ -46,6 +69,8 @@ telefono_fijo:
   label: "Telefono"
   aliases:
     - "Teléfono"
+    - "Telefonos:"
+    - "Tel.:"
   sheet: "Formulario contrapartes"
   required: true
   type: phone
@@ -54,11 +79,11 @@ telefono_fijo:
     row: 0
     col: 1
 
-# "Otros teléfonos" recibe el número alternativo, no el celular principal del RL
 telefono_alternativo:
   label: "Otros telefonos"
   aliases:
     - "Otros teléfonos"
+    - "Otros Tel."
   sheet: "Formulario contrapartes"
   required: false
   type: phone
@@ -71,6 +96,8 @@ pais:
   label: "Pais"
   aliases:
     - "País"
+    - "Pais:"
+    - "País:"
   sheet: "Formulario contrapartes"
   required: true
   target_strategy: offset
@@ -80,6 +107,8 @@ pais:
 
 departamento:
   label: "Departamento"
+  aliases:
+    - "Departamento:"
   sheet: "Formulario contrapartes"
   required: true
   target_strategy: offset
@@ -89,6 +118,9 @@ departamento:
 
 ciudad_municipio:
   label: "Ciudad"
+  aliases:
+    - "Ciudad:"
+    - "Ciudad/Municipio:"
   sheet: "Formulario contrapartes"
   required: true
   target_strategy: offset
@@ -100,88 +132,211 @@ pagina_web:
   label: "Pagina web"
   aliases:
     - "Página web:"
+    - "Pagina Web:"
+    - "Web:"
   sheet: "Formulario contrapartes"
-  required: false                # false: no todos los forms tienen campo web
+  required: false
   target_strategy: offset
   offset:
     row: 0
     col: 1
 
-representante_legal_nombre:
-  label: "Datos representante legal"
+actividad_economica:
+  label: "Actividad economica"
+  aliases:
+    - "Actividad económica"
+    - "Actividad Económica:"
+    - "Sector/ Tipo de Actividad"
   sheet: "Formulario contrapartes"
-  required: true
+  required: false
   target_strategy: offset
   offset:
-    row: 1
+    row: 0
+    col: 1
+
+codigo_ciiu:
+  label: "Codigo CIIU"
+  aliases:
+    - "Código CIIU"
+    - "Código CIIU:"
+    - "CIIU:"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
+descripcion_actividad:
+  label: "Descripcion de actividad"
+  aliases:
+    - "Descripción de actividad"
+    - "Detalle de los servicios o bienes que suministra:"
+    - "Descripcion de actividad economica"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
+bien_servicio:
+  label: "Bien o servicio a entregar"
+  aliases:
+    - "Bien o servicio a entregar / prestar"
+    - "Bien/Servicio que provee es:"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
+# tipo_empresa: campo de marcación — se resuelve por inferencia de celda SI/NO
+tipo_empresa:
+  label: "Tipo de empresa"
+  aliases:
+    - "Persona Juridica"
+    - "Persona Jurídica"
+    - "Tipo de persona"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset_or_infer
+  write_mode: mark
+  mark_symbol: "X"
+
+# ===========================================================================
+# SECCIÓN 1b: Representante Legal
+# FIX E-01: Labels únicos por campo, no el encabezado de sección
+# ===========================================================================
+
+representante_legal_nombre:
+  label: "Nombre completo"
+  aliases:
+    - "Nombres y apellidos del Gerente General (CEO):"
+    - "Nombres y apellidos:"
+    - "Nombre del representante legal"
+  sheet: "Formulario contrapartes"
+  required: true
+  # hint_row: se propaga desde el scanner cuando el label "Nombre completo"
+  # aparece múltiples veces (sección RL, contador, etc.)
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
+representante_legal_tipo_doc:
+  label: "Tipo de identificacion"
+  aliases:
+    - "Tipo de Identificación"
+    - "Tipo de documento"
+    - "Identificacion:"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 0
     col: 1
 
 representante_legal_documento:
-  label: "Datos representante legal"
+  label: "Numero de identificacion"
+  aliases:
+    - "Número de identificación"
+    - "No. De identificación:"
+    - "Numero:"
+    - "No. Identificacion"
   sheet: "Formulario contrapartes"
   required: true
   type: number
   target_strategy: offset
   offset:
-    row: 1
-    col: 7                       # VERIFICAR: depende de la estructura de columnas del form
+    row: 0
+    col: 1
 
-# Correo del representante legal (row 2 de la sección RL), no el email general de la empresa
 representante_legal_correo:
-  label: "Datos representante legal"
+  label: "Correo electronico"
+  aliases:
+    - "Correo electrónico"
+    - "E-mail:"
+    - "Email:"
+    - "Correo:"
   sheet: "Formulario contrapartes"
   required: false
   type: email
   target_strategy: offset
   offset:
-    row: 2
+    row: 0
     col: 1
 
-firma_representante_nombre:
-  label: "Firma del Representante Legal o Persona Natural"
+representante_legal_celular:
+  label: "Telefono celular"
+  aliases:
+    - "Teléfono celular"
+    - "Celular:"
+    - "Móvil:"
+    - "Movil:"
   sheet: "Formulario contrapartes"
-  required: false                # false: bloquea fill si el label de firma no existe
+  required: false
+  type: phone
   target_strategy: offset
   offset:
-    row: 1
+    row: 0
     col: 1
 
-firma_representante_documento:
-  label: "Firma del Representante Legal o Persona Natural"
+# ===========================================================================
+# SECCIÓN 1c: Contador
+# ===========================================================================
+
+contador_nombre:
+  label: "Nombre completo"
+  aliases:
+    - "Nombre del contador"
+    - "Contador:"
+  sheet: "Formulario contrapartes"
+  required: false
+  # hint_row crítico: "Nombre completo" aparece también en sección RL.
+  # El scanner propaga hint_row para desambiguar. Sin template disponible
+  # se deja para configurar tras ejecutar verificar_offsets.py.
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
+contador_documento:
+  label: "Numero de identificacion"
+  aliases:
+    - "Número de identificación"
+    - "No. Identificacion"
   sheet: "Formulario contrapartes"
   required: false
   type: number
   target_strategy: offset
   offset:
-    row: 2
+    row: 0
     col: 1
 
-firma_diligencio_nombre:
-  label: "Firma de quien diligencio el formulario"
+contador_tarjeta_profesional:
+  label: "Tarjeta profesional"
   aliases:
-    - "Firma de quien diligenció el formulario"
+    - "Tarjeta Profesional:"
+    - "T.P.:"
   sheet: "Formulario contrapartes"
   required: false
   target_strategy: offset
   offset:
-    row: 1
+    row: 0
     col: 1
 
-firma_diligencio_documento:
-  label: "Firma de quien diligencio el formulario"
-  aliases:
-    - "Firma de quien diligenció el formulario"
-  sheet: "Formulario contrapartes"
-  required: false
-  target_strategy: offset
-  offset:
-    row: 2
-    col: 1
+# ===========================================================================
+# SECCIÓN 2: Operaciones Internacionales y Activos Virtuales
+# ===========================================================================
 
 op_internacionales:
   label: "Realiza operaciones internacionales"
   aliases:
     - "¿Realiza operaciones internacionales?"
+    - "Realiza actividades con moneda extranjera"
+    - "¿Realiza actividades con moneda extranjera?"
   sheet: "Formulario contrapartes"
   required: false
   target_strategy: offset_or_infer
@@ -202,6 +357,8 @@ activos_virtuales:
   label: "Maneja activos virtuales"
   aliases:
     - "¿Maneja activos virtuales?"
+    - "Realiza actividades con criptomonedas"
+    - "¿Realiza actividades con criptomonedas?"
   sheet: "Formulario contrapartes"
   required: false
   target_strategy: offset_or_infer
@@ -232,45 +389,154 @@ controles_laft:
   label: "Tiene controles para la prevencion del riesgo de lavado de activos"
   aliases:
     - "¿Tiene controles para la prevención del riesgo de lavado de activos, la financiación del terrorismo o el financiamiento de armas de destrucción masiva?"
+    - "Sistema de Prevencion y Control de Lavado"
+    - "Usted esta sujeto a tener un Sistema de Prevención"
   sheet: "Formulario contrapartes"
   required: false
   target_strategy: offset_or_infer
   write_mode: mark
   mark_symbol: "X"
 
+# ===========================================================================
+# SECCIÓN 3: Personal de Contacto
+# ===========================================================================
+
+contacto_nombre:
+  label: "Contacto pagos"
+  aliases:
+    - "Contacto de pagos:"
+    - "Contacto administrativo:"
+    - "Nombre del contacto"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
+contacto_celular:
+  label: "Movil"
+  aliases:
+    - "Móvil:"
+    - "Celular contacto:"
+  sheet: "Formulario contrapartes"
+  required: false
+  type: phone
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
+# ===========================================================================
+# SECCIÓN 4: Referencias Comerciales
+# FIX E-10: Label del encabezado de columna, no del encabezado de sección
+# ===========================================================================
+
 referencia_1_empresa:
   label: "4. REFERENCIAS COMERCIALES"
+  aliases:
+    - "4. REFERENCIAS COMERCIALES"
+    - "Referencias Comerciales"
   sheet: "Formulario contrapartes"
   required: false
   target_strategy: offset
   offset:
     row: 2
-    col: 1                       # col:1 → columna del valor, no la del header (col:0 era incorrecto)
+    col: 1
+
+referencia_1_nit:
+  label: "4. REFERENCIAS COMERCIALES"
+  aliases:
+    - "Referencias Comerciales"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 2
+    col: 2
 
 referencia_2_empresa:
   label: "4. REFERENCIAS COMERCIALES"
+  aliases:
+    - "Referencias Comerciales"
   sheet: "Formulario contrapartes"
   required: false
   target_strategy: offset
   offset:
     row: 3
     col: 1
+
+referencia_2_nit:
+  label: "4. REFERENCIAS COMERCIALES"
+  aliases:
+    - "Referencias Comerciales"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 3
+    col: 2
+
+# ===========================================================================
+# SECCIÓN 5: Gestión Corporativa
+# ===========================================================================
+
+reporta_entidad_control:
+  label: "Debe reportar ante alguna entidad de control"
+  aliases:
+    - "¿Debe reportar ante alguna entidad de control?"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset_or_infer
+  write_mode: mark
+  mark_symbol: "X"
+
+# ===========================================================================
+# SECCIÓN 6: Beneficiarios Finales
+# ===========================================================================
 
 beneficiario_1_nombre:
   label: "6. INFORMACION DE BENEFICIARIOS FINALES"
   aliases:
     - "6. INFORMACIÓN DE BENEFICIARIOS FINALES"
+    - "4. DATOS BENEFICIARIOS FINALES"
+    - "Nombre o razon social:"
   sheet: "Formulario contrapartes"
   required: false
   target_strategy: offset
   offset:
     row: 2
-    col: 1                       # col:1 → columna del valor nombre, no la del header
+    col: 1
+
+beneficiario_1_documento:
+  label: "6. INFORMACION DE BENEFICIARIOS FINALES"
+  aliases:
+    - "6. INFORMACIÓN DE BENEFICIARIOS FINALES"
+    - "4. DATOS BENEFICIARIOS FINALES"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 2
+    col: 5
+
+beneficiario_1_participacion:
+  label: "6. INFORMACION DE BENEFICIARIOS FINALES"
+  aliases:
+    - "6. INFORMACIÓN DE BENEFICIARIOS FINALES"
+    - "4. DATOS BENEFICIARIOS FINALES"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 2
+    col: 9
 
 beneficiario_2_nombre:
   label: "6. INFORMACION DE BENEFICIARIOS FINALES"
   aliases:
     - "6. INFORMACIÓN DE BENEFICIARIOS FINALES"
+    - "4. DATOS BENEFICIARIOS FINALES"
   sheet: "Formulario contrapartes"
   required: false
   target_strategy: offset
@@ -278,24 +544,217 @@ beneficiario_2_nombre:
     row: 3
     col: 1
 
-banco_nombre:
-  label: "7. INFORMACION FINANCIERA DE LA ORGANIZACION"
+beneficiario_2_documento:
+  label: "6. INFORMACION DE BENEFICIARIOS FINALES"
   aliases:
-    - "7. INFORMACIÓN FINANCIERA DE LA ORGANIZACIÓN"
+    - "6. INFORMACIÓN DE BENEFICIARIOS FINALES"
+    - "4. DATOS BENEFICIARIOS FINALES"
   sheet: "Formulario contrapartes"
   required: false
   target_strategy: offset
   offset:
-    row: 2
+    row: 3
+    col: 5
+
+beneficiario_2_participacion:
+  label: "6. INFORMACION DE BENEFICIARIOS FINALES"
+  aliases:
+    - "6. INFORMACIÓN DE BENEFICIARIOS FINALES"
+    - "4. DATOS BENEFICIARIOS FINALES"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 3
+    col: 9
+
+# ===========================================================================
+# SECCIÓN 7: Información Financiera
+# FIX E-09: Campos financieros ahora con reglas (antes sin mapping)
+# ===========================================================================
+
+banco_nombre:
+  label: "Entidad Bancaria"
+  aliases:
+    - "Entidad Bancaria:"
+    - "7. INFORMACION FINANCIERA DE LA ORGANIZACION"
+    - "7. INFORMACIÓN FINANCIERA DE LA ORGANIZACIÓN"
+    - "Informacion para el pago proveedor Nacional:"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
+tipo_cuenta:
+  label: "Tipo de Cuenta"
+  aliases:
+    - "Tipo de cuenta:"
+    - "Tipo Cuenta:"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 0
     col: 1
 
 numero_cuenta:
-  label: "7. INFORMACION FINANCIERA DE LA ORGANIZACION"
+  label: "No. Cuenta"
   aliases:
-    - "7. INFORMACIÓN FINANCIERA DE LA ORGANIZACIÓN"
+    - "No. Cuenta:"
+    - "Numero de cuenta:"
+    - "Número de cuenta"
+    - "No. De cuenta"
   sheet: "Formulario contrapartes"
   required: false
   target_strategy: offset
   offset:
-    row: 2
-    col: 6
+    row: 0
+    col: 1
+
+fin_ano:
+  label: "Ano"
+  aliases:
+    - "Año"
+    - "Año:"
+    - "Vigencia"
+  sheet: "Formulario contrapartes"
+  required: false
+  type: number
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
+fin_activos:
+  label: "Activos"
+  aliases:
+    - "Total Activos:"
+    - "Activos totales"
+    - "Activos totales:"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
+fin_pasivos:
+  label: "Pasivos"
+  aliases:
+    - "Total Pasivos:"
+    - "Pasivos totales"
+    - "Pasivos totales:"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
+fin_patrimonio:
+  label: "Patrimonio"
+  aliases:
+    - "Total Patrimonio:"
+    - "Patrimonio neto:"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
+fin_ingresos:
+  label: "Ingresos"
+  aliases:
+    - "Total Ingresos:"
+    - "Ingresos ordinarios:"
+    - "Ingresos:"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
+fin_egresos:
+  label: "Egresos"
+  aliases:
+    - "Total Egresos:"
+    - "Egresos / Gastos:"
+    - "Gastos:"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
+fin_otros_ingresos:
+  label: "Otros ingresos"
+  aliases:
+    - "Otros Ingresos:"
+    - "Ingresos no operacionales:"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
+# ===========================================================================
+# SECCIÓN 11: Firmas
+# FIX E-05: Labels únicos para cada campo de firma
+# ===========================================================================
+
+firma_representante_nombre:
+  label: "Firma del Representante Legal o Persona Natural"
+  aliases:
+    - "Firma representante legal o persona natural"
+    - "Firma Representante Legal:"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
+firma_representante_documento:
+  label: "Numero de identificacion"
+  aliases:
+    - "Número de identificación"
+    - "C.C.:"
+    - "Cedula:"
+  sheet: "Formulario contrapartes"
+  required: false
+  type: number
+  target_strategy: offset
+  offset:
+    row: 1
+    col: 1
+
+firma_diligencio_nombre:
+  label: "Firma de quien diligencio el formulario"
+  aliases:
+    - "Firma de quien diligenció el formulario"
+    - "Firma de quien diligenció:"
+    - "Diligenciado por:"
+  sheet: "Formulario contrapartes"
+  required: false
+  target_strategy: offset
+  offset:
+    row: 0
+    col: 1
+
+firma_diligencio_documento:
+  label: "Firma de quien diligencio el formulario"
+  aliases:
+    - "Firma de quien diligenció el formulario"
+  sheet: "Formulario contrapartes"
+  required: false
+  type: number
+  target_strategy: offset
+  offset:
+    row: 1
+    col: 1
